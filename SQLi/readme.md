@@ -89,6 +89,8 @@ Kẻ tấn công có thể gửi đầu vào:\
 `' UNION SELECT username, password FROM users--`\
 Điều này khiến ứng dụng trả về tất cả username và password cùng với name và descriptions sản phẩm.
 
+Đọc về: [UNION ATTACK](<UNION attack.md>)
+
 ## Blind SQL injection vulnerabilities
 Nhiều trường hợp SQLi là những lỗ hổng không nhìn thấy được (Không có response trả về). Điều này có nghĩa là ứng dụng không trả về kết quả của truy vấn SQL hoặc chi tiết về bất kỳ lỗi cơ sở dữ liệu nào trong phản hồi của nó. Các lỗ hổng ẩn vẫn có thể bị khai thác để truy cập dữ liệu trái phép, nhưng các kỹ thuật liên quan thường phức tạp và khó thực hiện hơn.
 
@@ -96,6 +98,8 @@ Các kỹ thuật sau đây có thể được sử dụng để khai thác lỗ
 - Bạn có thể thay đổi logic của truy vấn để kích hoạt sự khác biệt có thể phát hiện được trong phản hồi của ứng dụng tùy thuộc vào mức độ thực tế của một điều kiện. Điều này có thể liên quan đến việc đưa một điều kiện mới vào logic Boolean nào đó hoặc gây ra một lỗi có điều kiện, chẳng hạn như lỗi chia cho 0.
 - Bạn có thể kích hoạt có `điều kiện độ trễ thời gian` trong quá trình xử lý truy vấn. Điều này cho phép bạn suy ra sự thật của điều kiện dựa trên thời gian mà ứng dụng cần để phản hồi.
 - Bạn có thể kích hoạt tương tác mạng ngoài băng tần bằng cách sử dụng kỹ thuật `OAST`. Kỹ thuật này cực kỳ mạnh mẽ và hoạt động trong những tình huống mà các kỹ thuật khác không làm được. Thông thường, bạn có thể lọc trực tiếp dữ liệu qua kênh ngoài băng tần. Ví dụ: bạn có thể đặt dữ liệu vào tra cứu DNS cho miền mà bạn kiểm soát.
+
+Đọc về: [Blind SQL](<Blind SQL injection.md>)
 
 Cheat-sheet: `https://portswigger.net/web-security/sql-injection/cheat-sheet`
 
