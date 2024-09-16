@@ -21,8 +21,20 @@ Bạn cũng nên lưu ý rằng mặc dù các lỗi logic có thể không cho 
 ## What are some examples of business logic vulnerabilities?
 Cách tốt nhất để hiểu các lỗ hổng logic nghiệp vụ là xem xét các trường hợp thực tế và học hỏi từ những sai lầm đã mắc phải. Chúng tôi đã cung cấp các ví dụ cụ thể về nhiều lỗi logic phổ biến cũng như một số trang web dễ bị tấn công có chủ ý để bạn có thể tự mình thực hành khai thác các lỗ hổng này.
 
-Đọc thêm: Ví dụ về lỗ hổng logic nghiệp vụ
+Đọc thêm: [Ví dụ về lỗ hổng logic nghiệp vụ](<Examples of business logic vulnerabilities.md>)
 
+## How to prevent business logic vulnerabilities
+Nói tóm lại, chìa khóa để ngăn chặn các lỗ hổng logic nghiệp vụ là:
+- Đảm bảo nhà phát triển và người thử nghiệm hiểu nhiệm vụ mà ứng dụng phục vụ
+- Tránh đưa ra các giả định ngầm về hành vi của người dùng hoặc hành vi của các phần khác của ứng dụng
+
+Bạn nên xác định những giả định nào bạn đã đưa ra về trạng thái phía máy chủ và triển khai logic cần thiết để xác minh rằng những giả định này được đáp ứng. Điều này bao gồm việc đảm bảo rằng giá trị của bất kỳ đầu vào nào đều hợp lý trước khi tiếp tục.\
+Điều quan trọng nữa là phải đảm bảo rằng cả nhà phát triển và người thử nghiệm đều có thể hiểu đầy đủ các giả định này và cách ứng dụng sẽ phản ứng trong các tình huống khác nhau. Điều này có thể giúp nhóm phát hiện ra các lỗi logic càng sớm càng tốt. Để tạo điều kiện thuận lợi cho việc này, nhóm phát triển nên tuân thủ các phương pháp hay nhất sau đây bất cứ khi nào có thể:
+- Duy trì các tài liệu thiết kế và luồng dữ liệu rõ ràng cho tất cả các giao dịch và quy trình công việc, lưu ý mọi giả định được đưa ra ở mỗi giai đoạn.
+- Viết mã càng rõ ràng càng tốt. Nếu khó hiểu điều gì sẽ xảy ra thì sẽ khó phát hiện ra bất kỳ sai sót logic nào. Lý tưởng nhất là mã được viết tốt không cần tài liệu để hiểu nó. Trong những trường hợp phức tạp không thể tránh khỏi, việc tạo ra tài liệu rõ ràng là rất quan trọng để đảm bảo rằng các nhà phát triển và người thử nghiệm khác biết những giả định nào đang được đưa ra và chính xác hành vi dự kiến ​​là gì.
+- Lưu ý mọi tham chiếu đến mã khác sử dụng từng thành phần. Hãy suy nghĩ về bất kỳ tác dụng phụ nào của những phần phụ thuộc này nếu một bên độc hại thao túng chúng theo cách bất thường.
+
+Do tính chất tương đối độc đáo của nhiều sai sót logic, bạn có thể dễ dàng coi chúng là lỗi xảy ra một lần do lỗi của con người và tiếp tục. Tuy nhiên, như chúng tôi đã chứng minh, những sai sót này thường là kết quả của những hoạt động không tốt trong giai đoạn đầu xây dựng ứng dụng. Phân tích lý do tại sao lỗ hổng logic lại tồn tại ngay từ đầu và nhóm đã bỏ qua nó như thế nào, có thể giúp bạn phát hiện ra điểm yếu trong quy trình của mình. Bằng cách thực hiện những điều chỉnh nhỏ, bạn có thể tăng khả năng các sai sót tương tự sẽ bị loại bỏ ngay từ đầu hoặc được phát hiện sớm hơn trong quá trình phát triển.
 
 
 
