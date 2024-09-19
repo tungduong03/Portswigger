@@ -154,14 +154,60 @@ Bài này phản hồi về bắt buộc extention phải là `.png` hoặc `.jp
 ![alt text](image-9.png)\
 ![alt text](image-10.png)
 
-#### Flawed validation of the file's contents
+### Flawed validation of the file's contents
 Thay vì hoàn toàn tin tưởng vào `Content-Type` được chỉ định trong yêu cầu, các máy chủ an toàn hơn sẽ cố gắng xác minh rằng nội dung của tệp thực sự khớp với những gì được mong đợi.\
 Trong trường hợp chức năng tải lên hình ảnh, máy chủ có thể cố gắng xác minh các thuộc tính nội tại nhất định của hình ảnh, chẳng hạn như kích thước của nó. Ví dụ: nếu bạn thử tải lên tập lệnh PHP, nó sẽ không có bất kỳ kích thước nào cả. Do đó, máy chủ có thể suy luận rằng đó không thể là hình ảnh và từ chối tải lên tương ứng.\
 Tương tự, một số loại tệp nhất định có thể luôn chứa một chuỗi byte cụ thể trong đầu trang hoặc chân trang của chúng. Chúng có thể được sử dụng như dấu vân tay hoặc chữ ký để xác định xem nội dung có khớp với loại dự kiến ​​hay không. Ví dụ: tệp `JPEG` luôn bắt đầu bằng byte `FF D8 FF`.\
 Đây là một cách xác thực loại tệp mạnh mẽ hơn nhiều, nhưng ngay cả cách này cũng không thể thực hiện được. Bằng cách sử dụng các công cụ đặc biệt, chẳng hạn như `ExifTool`, việc tạo một tệp `JPEG` đa ngôn ngữ chứa mã độc trong siêu dữ liệu của nó có thể là chuyện đơn giản.
 
-Ví dụ: 
+Ví dụ: https://portswigger.net/web-security/file-upload/lab-file-upload-remote-code-execution-via-polyglot-web-shell-upload
 
+Ở bài này ta thử các kiểu như thay signature, `Content-Type`, extention đều không khả thi, bên server vẫn phản hồi đó không phải là image, nên ta sẽ dùng `exiftool` để đưa code PHP vào phần comment của ảnh mà không làm thay đổi extention vẫn là `php`
+Tải exiftool về và có 1 ảnh hợp lệ, chạy lệnh:\
+`./exiftool.exe -Comment="<?php echo 'START ' . file_get_contents('/home/carlos/secret') . ' END'; ?>" a.jpg -o polyglot.php`, với `a.jpg` là ảnh hợp lệ cho trước và `polyglot.php` là đầu ra cho file ta tạo. 
+![alt text](image-12.png)
+![alt text](image-11.png)
 
+### Exploiting file upload race conditions
+Các framework hiện đại có khả năng chống lại các kiểu tấn công này. Họ thường không tải tệp trực tiếp lên đích dự định trên hệ thống tệp. Thay vào đó, họ thực hiện các biện pháp phòng ngừa như `tải lên thư mục tạm thời`, có `sandbox` trước và `đặt tên ngẫu nhiên` để tránh ghi đè các tệp hiện có. Sau đó, họ thực hiện xác thực trên tệp tạm thời này và chỉ chuyển nó đến đích khi được coi là an toàn để làm như vậy.\
+Điều đó có nghĩa là, các nhà phát triển đôi khi triển khai quá trình xử lý tải tệp lên của riêng họ một cách độc lập với bất kỳ framework nào. Điều này không chỉ khá phức tạp để thực hiện tốt mà còn có thể đưa ra các race condition nguy hiểm cho phép kẻ tấn công hoàn toàn vượt qua ngay cả quá trình xác thực mạnh mẽ nhất.\
+Ví dụ: một số trang web tải tệp trực tiếp lên hệ thống tệp chính rồi xóa lại nếu tệp không vượt qua quá trình xác thực. Loại hành vi này là điển hình trong các trang web dựa vào phần mềm chống vi-rút và muốn kiểm tra phần mềm độc hại. Quá trình này có thể chỉ mất vài mili giây nhưng trong khoảng thời gian ngắn mà tệp tồn tại trên máy chủ, kẻ tấn công vẫn có thể thực thi nó.\
+Những lỗ hổng này thường cực kỳ tinh vi, khiến chúng khó bị phát hiện trong quá trình kiểm tra hộp đen trừ khi bạn có thể tìm ra cách rò rỉ mã nguồn liên quan.
+
+Ví dụ: https://portswigger.net/web-security/file-upload/lab-file-upload-web-shell-upload-via-race-condition
+
+(Chưa làm)
+
+#### Race conditions in URL-based file uploads
+Điều kiện tương tự có thể xảy ra trong các chức năng cho phép bạn tải tệp lên bằng cách cung cấp URL. Trong trường hợp này, máy chủ phải tìm nạp tệp qua internet và tạo một bản sao cục bộ trước khi có thể thực hiện bất kỳ xác thực nào.\
+Vì tệp được tải bằng HTTP nên các nhà phát triển không thể sử dụng cơ chế tích hợp sẵn trong framework của họ để xác thực tệp một cách an toàn. Thay vào đó, họ có thể tự tạo các quy trình của riêng mình để lưu trữ tạm thời và xác thực tệp, quy trình này có thể không an toàn lắm.\
+Ví dụ: nếu tệp được tải vào một thư mục tạm thời có tên ngẫu nhiên, về mặt lý thuyết, kẻ tấn công sẽ không thể khai thác bất kỳ điều kiện nào. Nếu họ không biết tên của thư mục, họ sẽ không thể yêu cầu tệp để kích hoạt việc thực thi nó. Mặt khác, nếu tên thư mục ngẫu nhiên được tạo bằng cách sử dụng các hàm giả ngẫu nhiên như `uniqid()` của PHP, thì nó có khả năng bị brute-force.\
+Để thực hiện các cuộc tấn công như thế này dễ dàng hơn, bạn có thể cố gắng kéo dài lượng thời gian cần thiết để xử lý tệp, từ đó kéo dài cửa sổ để ép buộc tên thư mục. Một cách để thực hiện việc này là tải lên một tệp lớn hơn. Nếu nó được xử lý theo từng khối, bạn có thể tận dụng lợi thế này bằng cách tạo một tệp độc hại có tải trọng ngay từ đầu, theo sau là một số lượng lớn byte đệm tùy ý.
+## Exploiting file upload vulnerabilities without remote code execution
+Trong các ví dụ mà chúng ta đã xem xét cho đến nay, chúng ta có thể tải lên các tập lệnh phía máy chủ để thực thi mã từ xa. Đây là hậu quả nghiêm trọng nhất của chức năng tải file không an toàn lên nhưng những lỗ hổng này vẫn có thể bị khai thác theo những cách khác.
+### Uploading malicious client-side scripts
+Mặc dù bạn có thể không thực thi được các tập lệnh trên máy chủ nhưng bạn vẫn có thể tải lên các tập lệnh để tấn công phía máy khách. Ví dụ: nếu bạn có thể tải lên tệp HTML hoặc hình ảnh SVG, bạn có thể sử dụng thẻ `<script>` để tạo tải trọng XSS được lưu trữ.\
+Nếu sau đó tệp đã tải lên xuất hiện trên một trang được người dùng khác truy cập, trình duyệt của họ sẽ thực thi tập lệnh khi nó cố gắng hiển thị trang. Lưu ý rằng do các hạn chế trong `same-origin policy `, các kiểu tấn công này sẽ chỉ hoạt động nếu tệp đã tải lên được cung cấp từ cùng nguồn mà bạn tải tệp đó lên.
+### Exploiting vulnerabilities in the parsing of uploaded files
+Nếu tệp đã tải lên có vẻ vừa được lưu trữ vừa được phân phát an toàn thì biện pháp cuối cùng là thử khai thác các lỗ hổng cụ thể đối với việc phân tích cú pháp hoặc xử lý các định dạng tệp khác nhau. Ví dụ: bạn biết rằng máy chủ phân tích cú pháp các tệp dựa trên XML, chẳng hạn như tệp Microsoft Office `.doc` hoặc `.xls`, đây có thể là vectơ tiềm ẩn cho các cuộc tấn công tiêm nhiễm XXE.
+## Uploading files using PUT
+Cần lưu ý rằng một số máy chủ web có thể được cấu hình để hỗ trợ các yêu cầu `PUT`. Nếu không có biện pháp phòng vệ thích hợp, điều này có thể cung cấp một phương tiện thay thế để tải lên các tệp độc hại, ngay cả khi chức năng tải lên không khả dụng qua giao diện web.
+```
+PUT /images/exploit.php HTTP/1.1
+Host: vulnerable-website.com
+Content-Type: application/x-httpd-php
+Content-Length: 49
+
+<?php echo file_get_contents('/path/to/file'); ?>
+```
+Tip: Bạn có thể thử gửi các request `OPTIONS` đến các điểm cuối khác nhau để kiểm tra xem có bất kỳ yêu cầu nào quảng cáo hỗ trợ cho phương thức `PUT` hay không.
+
+## How to prevent file upload vulnerabilities
+Việc cho phép người dùng tải tệp lên là điều bình thường và không gây nguy hiểm miễn là bạn thực hiện các biện pháp phòng ngừa phù hợp. Nói chung, cách hiệu quả nhất để bảo vệ trang web của bạn khỏi những lỗ hổng này là triển khai tất cả các biện pháp sau:
+- Kiểm tra phần mở rộng tệp dựa trên danh sách trắng các tiện ích mở rộng được phép thay vì danh sách đen các tiện ích mở rộng bị cấm. Việc đoán những tiện ích mở rộng nào bạn có thể muốn cho phép sẽ dễ dàng hơn nhiều so với việc đoán những tiện ích mở rộng nào mà kẻ tấn công có thể cố tải lên.
+- Đảm bảo tên tệp không chứa bất kỳ chuỗi con nào có thể được hiểu là một thư mục hoặc một chuỗi truyền tải (../).
+- Đổi tên các file đã tải lên để tránh xung đột có thể khiến các file hiện có bị ghi đè.
+- Không tải tệp lên hệ thống tệp cố định của máy chủ cho đến khi chúng được xác thực đầy đủ.
+- Hãy sử dụng một framework đã được thiết lập để xử lý trước các tệp tải lên thay vì cố gắng viết các cơ chế xác thực của riêng bạn.
 
 
