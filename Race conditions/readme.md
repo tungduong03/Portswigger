@@ -79,6 +79,42 @@ Cách 1 làm theo bài trước, password phải thay bằng cơm, sau đó tìm
 Cách 2 dùng Turbo Intruder:\
 
 
+## Hidden multi-step sequences
+Trong thực tế, một yêu cầu có thể bắt đầu toàn bộ chuỗi gồm nhiều bước ở hậu trường, chuyển ứng dụng qua nhiều trạng thái ẩn mà ứng dụng đi vào rồi thoát ra lại trước khi quá trình xử lý yêu cầu hoàn tất. Chúng ta sẽ gọi chúng là "các trạng thái phụ".\
+Nếu bạn có thể xác định một hoặc nhiều yêu cầu HTTP gây ra tương tác với cùng một dữ liệu, thì bạn có thể lạm dụng các trạng thái phụ này để phát hiện các biến thể nhạy cảm về thời gian của các loại lỗi logic thường gặp trong quy trình làm việc nhiều bước. Điều này cho phép khai thác race condition vượt quá giới hạn.\
+Ví dụ: bạn có thể quen với quy trình xác thực đa yếu tố (MFA) thiếu sót cho phép bạn thực hiện phần đầu tiên của quá trình đăng nhập bằng thông tin xác thực đã biết, sau đó điều hướng thẳng đến ứng dụng thông qua duyệt bắt buộc, bỏ qua hoàn toàn MFA một cách hiệu quả.\
+Mã giả sau đây minh họa cách một trang web có thể dễ bị tổn thương trước một race variation của cuộc tấn công này:
+```
+    session['userid'] = user.userid
+    if user.mfa_enabled:
+    session['enforce_mfa'] = True
+    # generate and send MFA code to user
+    # redirect browser to MFA code entry form
+```
+Như bạn có thể thấy, trên thực tế, đây là một chuỗi gồm nhiều bước trong khoảng một yêu cầu. Quan trọng nhất, nó chuyển qua trạng thái phụ trong đó người dùng tạm thời có phiên đăng nhập hợp lệ nhưng MFA vẫn chưa được thực thi. Kẻ tấn công có thể khai thác điều này bằng cách gửi yêu cầu đăng nhập cùng với yêu cầu đến điểm cuối nhạy cảm, được xác thực.\
+Sau này chúng ta sẽ xem xét thêm một số ví dụ về trình tự nhiều bước ẩn và bạn sẽ có thể thực hành khai thác chúng trong phòng thí nghiệm tương tác của chúng tôi. Tuy nhiên, vì các lỗ hổng này khá cụ thể cho từng ứng dụng, điều quan trọng trước tiên là phải hiểu phương pháp rộng hơn mà bạn cần áp dụng để xác định chúng một cách hiệu quả, cả trong phòng thí nghiệm và thực tế.
+
+## Methodology
+![alt text](image-8.png)
+### Predict potential collisions - Dự đoán khả năng va chạm
+Kiểm tra mọi điểm cuối là không thực tế. Sau khi vạch ra trang đích như bình thường, bạn có thể giảm số lượng điểm cuối cần kiểm tra bằng cách tự hỏi mình những câu hỏi sau:
+- Bảo mật điểm cuối này có quan trọng không? Nhiều điểm cuối không chạm tới chức năng quan trọng nên không đáng để thử nghiệm.
+- Có khả năng xảy ra va chạm không? Để xung đột thành công, bạn thường cần hai hoặc nhiều yêu cầu kích hoạt các hoạt động trên cùng một bản ghi. Ví dụ: hãy xem xét các biến thể sau của việc triển khai đặt lại mật khẩu:\
+![alt text](image-9.png)
+
+Với ví dụ đầu tiên, việc yêu cầu đặt lại mật khẩu song song cho hai người dùng khác nhau khó có thể gây ra xung đột vì nó dẫn đến những thay đổi đối với hai bản ghi khác nhau. Tuy nhiên, cách triển khai thứ hai cho phép bạn chỉnh sửa cùng một bản ghi với các yêu cầu dành cho hai người dùng khác nhau.
+### Probe for clues - Thăm dò manh mối
+Để nhận ra manh mối, trước tiên bạn cần đánh giá cách hoạt động của điểm cuối trong điều kiện bình thường. Bạn có thể thực hiện việc này trong Burp Repeater bằng cách nhóm tất cả các yêu cầu của mình và sử dụng tùy chọn Gửi nhóm theo trình tự (các kết nối riêng biệt). Để biết thêm thông tin, hãy xem Gửi yêu cầu theo trình tự.\
+Tiếp theo, gửi cùng một nhóm yêu cầu cùng lúc bằng cách sử dụng tấn công gói đơn (hoặc đồng bộ hóa byte cuối cùng nếu HTTP/2 không được hỗ trợ) để giảm thiểu hiện tượng giật mạng. Bạn có thể thực hiện việc này trong `Burp Repeater` bằng cách chọn tùy chọn Gửi nhóm song song. Để biết thêm thông tin, hãy xem Gửi yêu cầu song song. Ngoài ra, bạn có thể sử dụng tiện ích mở rộng `Turbo Intruder`, có sẵn trên `BApp Store`.\
+Bất cứ điều gì đều có thể là đầu mối. Chỉ cần tìm một số dạng sai lệch so với những gì bạn quan sát được trong quá trình đo điểm chuẩn. Điều này bao gồm thay đổi trong một hoặc nhiều phản hồi, nhưng đừng quên các hiệu ứng thứ hai như nội dung email khác nhau hoặc thay đổi rõ ràng trong hành vi của ứng dụng sau đó.
+
+### Prove the concept - Chứng minh 
+Cố gắng hiểu điều gì đang xảy ra, loại bỏ các yêu cầu không cần thiết và đảm bảo rằng bạn vẫn có thể tái tạo các hiệu ứng.\
+Các điều kiện chủng tộc nâng cao có thể tạo ra các nguyên thủy bất thường và độc đáo, do đó, con đường dẫn đến tác động tối đa không phải lúc nào cũng rõ ràng ngay lập tức. Có thể hữu ích khi coi mỗi tình trạng chủng tộc như một điểm yếu về cấu trúc chứ không phải là một lỗ hổng riêng lẻ.
+
+## Multi-endpoint race conditions
+Có lẽ hình thức trực quan nhất của các race condition này là những điều kiện liên quan đến việc gửi yêu cầu đến nhiều điểm cuối cùng một lúc.\
+Hãy nghĩ về lỗ hổng logic cổ điển trong các cửa hàng trực tuyến nơi bạn thêm một mặt hàng vào giỏ hàng hoặc giỏ hàng của mình, thanh toán cho mặt hàng đó, sau đó thêm các mặt hàng khác vào giỏ hàng trước khi buộc duyệt đến trang xác nhận đơn hàng.
 
 
 

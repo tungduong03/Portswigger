@@ -18,8 +18,18 @@ Ví dụ: https://portswigger.net/web-security/ssrf/blind/lab-out-of-band-detect
 Việc chỉ xác định một lỗ hổng SSRF mù có thể kích hoạt các yêu cầu HTTP ngoài băng tần tự nó không cung cấp lộ trình dẫn đến khả năng khai thác. Vì bạn không thể xem phản hồi từ yêu cầu phía sau nên không thể sử dụng hành vi này để khám phá nội dung trên các hệ thống mà máy chủ ứng dụng có thể tiếp cận. Tuy nhiên, nó vẫn có thể được tận dụng để thăm dò các lỗ hổng khác trên chính máy chủ hoặc trên các hệ thống phụ trợ khác. Bạn có thể quét một cách mù quáng không gian địa chỉ IP nội bộ, gửi các tải trọng được thiết kế để phát hiện các lỗ hổng phổ biến. Nếu các tải trọng đó cũng sử dụng các kỹ thuật ngoài băng tần mù, thì bạn có thể phát hiện ra lỗ hổng nghiêm trọng trên máy chủ nội bộ chưa được vá.
 
 Ví dụ: https://portswigger.net/web-security/ssrf/blind/lab-shellshock-exploitation
-(chưa làm)
 
+Ở bài này ta nhận thấy phần Scan của Burp Suite cho ta gợi ý về `User-agent` và `referer`:\
+![alt text](image-10.png)
+
+Tìm kiếm với từ khóa `Shellshock user-agent` ta nhận được: https://blog.cloudflare.com/inside-shellshock/
+
+Ở đây ta thấy nếu như dev dùng: `curl -H "User-Agent: () { :; }; /bin/eject" http://example.com/` để lấy nội dung trang web thì có thể bị tấn công để dùng command gửi gói tin ra bên ngoài.
+
+Mặt khác ta dùng `referer` để dò máy chủ, nếu máy chủ đúng thì nó sẽ gửi thông tin máy chủ về, 
+![alt text](image-13.png)
+
+![alt text](image-12.png)
 Một cách khác để khai thác các lỗ hổng SSRF mù là khiến ứng dụng kết nối với hệ thống dưới sự kiểm soát của kẻ tấn công và trả về các phản hồi độc hại cho máy khách HTTP tạo kết nối. Nếu bạn có thể khai thác lỗ hổng nghiêm trọng phía máy khách trong quá trình triển khai HTTP của máy chủ, thì bạn có thể thực thi mã từ xa trong cơ sở hạ tầng ứng dụng.
 
 
