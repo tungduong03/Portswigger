@@ -77,7 +77,11 @@ Cách 1 làm theo bài trước, password phải thay bằng cơm, sau đó tìm
 ![alt text](image-7.png)
 
 Cách 2 dùng Turbo Intruder:\
+![alt text](image-11.png)\
+Và phải chọn code `race-single-packet-attack.py`, chỉnh sửa payload\
+Với `wordlists.clipboard` là những payload bạn đang copy không cần tạo file. 
 
+![alt text](image-10.png)
 
 ## Hidden multi-step sequences
 Trong thực tế, một yêu cầu có thể bắt đầu toàn bộ chuỗi gồm nhiều bước ở hậu trường, chuyển ứng dụng qua nhiều trạng thái ẩn mà ứng dụng đi vào rồi thoát ra lại trước khi quá trình xử lý yêu cầu hoàn tất. Chúng ta sẽ gọi chúng là "các trạng thái phụ".\
@@ -114,7 +118,27 @@ Các điều kiện chủng tộc nâng cao có thể tạo ra các nguyên th�
 
 ## Multi-endpoint race conditions
 Có lẽ hình thức trực quan nhất của các race condition này là những điều kiện liên quan đến việc gửi yêu cầu đến nhiều điểm cuối cùng một lúc.\
-Hãy nghĩ về lỗ hổng logic cổ điển trong các cửa hàng trực tuyến nơi bạn thêm một mặt hàng vào giỏ hàng hoặc giỏ hàng của mình, thanh toán cho mặt hàng đó, sau đó thêm các mặt hàng khác vào giỏ hàng trước khi buộc duyệt đến trang xác nhận đơn hàng.
+Hãy nghĩ về lỗ hổng logic cổ điển trong các cửa hàng trực tuyến nơi bạn thêm một mặt hàng vào giỏ hàng hoặc giỏ hàng của mình, thanh toán cho mặt hàng đó, sau đó thêm các mặt hàng khác vào giỏ hàng trước khi buộc duyệt đến trang xác nhận đơn hàng.\
+Một biến thể của lỗ hổng này có thể xảy ra khi xác thực thanh toán và xác nhận đơn hàng được thực hiện trong quá trình xử lý một yêu cầu. Máy trạng thái cho trạng thái đơn hàng có thể trông giống như thế này:\
+![alt text](image-12.png)\
+Trong trường hợp này, bạn có thể thêm nhiều mặt hàng hơn vào giỏ hàng của mình trong thời gian diễn ra cuộc đua từ khi thanh toán được xác thực đến khi đơn hàng cuối cùng được xác nhận.
+### Aligning multi-endpoint race windows
+Khi kiểm tra các điều kiện tương tranh đa điểm cuối, bạn có thể gặp phải sự cố khi cố gắng sắp xếp các cửa sổ tương tranh cho từng yêu cầu, ngay cả khi bạn gửi tất cả chúng cùng lúc bằng kỹ thuật một gói.\
+![alt text](image-13.png)\
+Vấn đề phổ biến này chủ yếu được gây ra bởi hai yếu tố sau:
+- **Độ trễ do kiến ​​trúc mạng gây ra** - Ví dụ: có thể có độ trễ bất cứ khi nào máy chủ ngoại vi thiết lập kết nối mới với mặt sau. Giao thức được sử dụng cũng có thể có tác động lớn.
+- **Độ trễ do quá trình xử lý dành riêng cho điểm cuối gây ra** - Các điểm cuối khác nhau vốn có thời gian xử lý khác nhau, đôi khi rất khác nhau, tùy thuộc vào hoạt động nào chúng kích hoạt.
+
+May mắn thay, có những cách giải quyết tiềm năng cho cả hai vấn đề này.
+#### Connection warming
+Độ trễ kết nối back-end thường không ảnh hưởng đến các cuộc tấn công theo điều kiện tương tranh vì chúng thường trì hoãn các yêu cầu song song như nhau, do đó các yêu cầu vẫn được đồng bộ hóa.\
+Điều cần thiết là có thể phân biệt được những độ trễ này với những độ trễ do các yếu tố cụ thể của điểm cuối gây ra. Một cách để thực hiện việc này là "làm nóng" kết nối bằng một hoặc nhiều yêu cầu không quan trọng để xem liệu điều này có làm trơn tru thời gian xử lý còn lại hay không. Trong Burp Repeater, bạn có thể thử thêm yêu cầu GET cho trang chủ vào đầu nhóm tab của mình, sau đó sử dụng tùy chọn `Send group in sequence (single connection)`.\
+Nếu yêu cầu đầu tiên vẫn có thời gian xử lý lâu hơn nhưng các yêu cầu còn lại hiện được xử lý trong một khoảng thời gian ngắn thì bạn có thể bỏ qua độ trễ rõ ràng và tiếp tục thử nghiệm như bình thường.
+
+
+
+
+
 
 
 
