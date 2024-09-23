@@ -63,6 +63,14 @@ Phần `Invalid product ID:` là cố định, `lastest` là path, ta thêm path
 Nhiều trường hợp lỗ hổng XXE bị mù. Điều này có nghĩa là ứng dụng không trả về giá trị của bất kỳ thực thể bên ngoài nào được xác định trong phản hồi của nó và do đó không thể truy xuất trực tiếp các tệp phía máy chủ.\
 Các lỗ hổng XXE mù vẫn có thể bị phát hiện và khai thác nhưng cần có các kỹ thuật nâng cao hơn. Đôi khi, bạn có thể sử dụng các kỹ thuật ngoài băng tần để tìm lỗ hổng và khai thác chúng để lấy dữ liệu. Và đôi khi bạn có thể gây ra lỗi phân tích cú pháp XML dẫn đến tiết lộ dữ liệu nhạy cảm trong các thông báo lỗi.
 
+Đọc thêm [Tìm và khai thác lỗ hổng XXE mù](<blind XXE vulnerabilities.md>)
+
+## Finding hidden attack surface for XXE injection - Tìm nơi để tấn công XXE
+Bề mặt tấn công đối với các lỗ hổng chèn XXE là hiển nhiên trong nhiều trường hợp, vì lưu lượng HTTP thông thường của ứng dụng bao gồm các yêu cầu chứa dữ liệu ở định dạng XML. Trong các trường hợp khác, bề mặt tấn công ít được nhìn thấy hơn. Tuy nhiên, đôi khi, bạn sẽ thấy bề mặt tấn công XXE trong các yêu cầu không chứa bất kỳ XML nào.
+### XInclude attacks
+Một số ứng dụng nhận dữ liệu do khách hàng gửi, nhúng dữ liệu đó ở phía máy chủ vào tài liệu XML rồi phân tích cú pháp tài liệu đó. Một ví dụ về điều này xảy ra khi dữ liệu do khách hàng gửi được đặt vào một yêu cầu `SOAP`, sau đó được xử lý bởi `SOAP` service.\
+
+
 
 
 
