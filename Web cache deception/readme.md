@@ -76,8 +76,10 @@ Sự khác biệt trong cách bộ đệm và máy chủ gốc ánh xạ đườ
 - Bộ đệm đó diễn giải đường dẫn URL đầy đủ với phần mở rộng tĩnh.
 - Rằng có một quy tắc bộ đệm để lưu trữ phản hồi cho các yêu cầu kết thúc bằng `.js`
 
+Bộ nhớ đệm có thể có các quy tắc dựa trên các tiện ích mở rộng tĩnh cụ thể. Hãy thử nhiều tiện ích mở rộng, bao gồm `.css`, `.ico` và `.exe`.\
+Sau đó, bạn có thể tạo một URL trả về phản hồi động được lưu trữ trong bộ đệm. Lưu ý rằng cuộc tấn công này được giới hạn ở điểm cuối cụ thể mà bạn đã thử nghiệm, vì máy chủ gốc thường có các quy tắc trừu tượng khác nhau cho các điểm cuối khác nhau.
 
-
+Ví dụ: https://portswigger.net/web-security/web-cache-deception/lab-wcd-exploiting-path-mapping
 
 
 
