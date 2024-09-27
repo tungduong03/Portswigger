@@ -43,8 +43,31 @@ Payload: `<iframe src=https://0a9b004b04098a3c80aa857e0066000e.web-security-acad
 ### 4. DOM-based open redirection
 https://portswigger.net/web-security/dom-based/open-redirection/lab-dom-open-redirection
 
-Context: 
+Context: sink `location.href`, parameter `url` sẽ chứa đường dẫn để turn back
 
+![alt text](image-4.png)
+
+Payload: `https://YOUR-LAB-ID.web-security-academy.net/post?postId=4&url=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/`
+
+Ta đặt `url` chuyển hướng về server exploit
+
+---
+
+### 5. DOM-based cookie manipulation
+https://portswigger.net/web-security/dom-based/cookie-manipulation/lab-dom-cookie-manipulation
+
+Context: code tạo cookie phía client `lastViewedProduct` để lưu trang cuối cùng đã xem 
+
+![alt text](image-5.png)
+
+Nhưng giá trị này sẽ lấy tất cả path phía sau và không có filter, vì thế ta sẽ chèn `'` để thoát ra và chèn thêm mã js vào. 
+
+Payload: `<iframe src="https://YOUR-LAB-ID.web-security-academy.net/product?productId=1&'><script>print()</script>" onload="if(!window.x)this.src='https://YOUR-LAB-ID.web-security-academy.net';window.x=1;">`
+
+Iframe này dẫn đến 1 bài post và có thêm mã js, sau đó cookie sẽ lưu lại, và cũng trong iframe này, sự kiện onload ngay lập tức đưa về trang chủ để cookie không bị sửa đổi cũng như người dùng không phát hiện. Và khi người dùng tải lại trang chủ mã sẽ thực thi tự động vì page có:\
+![alt text](image-6.png)
+
+Còn 2 bài expert
 
 
 
