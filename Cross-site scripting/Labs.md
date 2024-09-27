@@ -1,28 +1,28 @@
-### 1. 
+### 1. Reflected XSS
 https://portswigger.net/web-security/cross-site-scripting/reflected/lab-html-context-nothing-encoded
 
 ---
 
-### 2. 
+### 2. Stored XSS
 https://portswigger.net/web-security/cross-site-scripting/stored/lab-html-context-nothing-encoded
 
 ---
 
-### 3. DOM location.search: 
+### 3. DOM XSS location.search: 
 https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-document-write-sink
 
 Dùng `document.write` để input đầu vào, payload: `"><svg onload=alert(1)>`
 
 ---
 
-### 4. DOM location.search: 
+### 4. DOM XSS location.search: 
 https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-innerhtml-sink
 
 Dùng `innerHTML` để input đầu vào, payload: `<img src=1 onerror=alert(1)>`
 
 ---
 
-### 5. DOM location.search: 
+### 5. DOM XSS location.search: 
 https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-jquery-href-attribute-sink
 
 Dùng `href` để gắn url cho `returnPath`:\
@@ -31,7 +31,7 @@ Dùng `href` để gắn url cho `returnPath`:\
 
 ---
 
-### 6. DOM location.hash: 
+### 6. DOM XSS location.hash: 
 https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-jquery-selector-hash-change-event
 
 ![alt text](image-3.png)\
@@ -229,6 +229,15 @@ Dùng XSS để đánh cắp `csrf token` và CSRF để đổi email:\
     };
 </script>
 ```
+---
+
+### 25. Reflected XSS:
+https://portswigger.net/web-security/cross-site-scripting/contexts/client-side-template-injection/lab-angular-sandbox-escape-without-strings
+
+Context: AngularJS -  the `$eval` function is not available
+
+![alt text](image-20.png)
+
 
 
 
