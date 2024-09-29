@@ -29,5 +29,58 @@ https://portswigger.net/web-security/csrf/bypassing-token-validation/lab-token-v
 
 Từ đây ta tạo payload.
 
+---
+
+### 4. CSRF where token is not tied to user session
+https://portswigger.net/web-security/csrf/bypassing-token-validation/lab-token-not-tied-to-user-session
+
+Context: 
+
+1. Csrf token ảnh hưởng đến xử lý, không thể xóa, hay sử dụng trùng nhau
+2. Email trùng với tài khoản khác sẽ không hợp lệ, dẫn đến các lần thay đổi sau đó sẽ ko được do csrf token không thay đổi mỗi phiên đăng nhập nên chỉ sử dụng được 1 lần
+
+Nhưng ở đây khi lấy csrf token của phiên đăng nhập của Carlos để gửi với change-email của weiner thì vẫn thành công do chưa sử dụng lần nào và nó tạo ra cho 1 phiên.\
+![alt text](image-3.png)
+
+![alt text](image-4.png)
+
+![alt text](image-5.png)
+
+Từ đây ta đăng nhập 1 tài khoản và lấy csrf token cho phiên đó để gửi cho victim.
+
+---
+
+### 5. CSRF where token is tied to non-session cookie
+https://portswigger.net/web-security/csrf/bypassing-token-validation/lab-token-tied-to-non-session-cookie
+
+Context:
+
+1. Khi update thì sẽ có cookie `csrfKey` và `csrf` token ở form, và 2 cái này tồn tại theo cặp, dù đổi người dùng thì nếu thay đổi cả 2 giá trị này theo cặp thì vẫn có thể request thành công. 
+
+=> Ta cần đổi cookie `csrfKey` của victim và rồi từ đó có thể dùng `csrf` token của mình
+
+Mặt khác, khi dùng chức năng search, thông tin sẽ được phản hồi ở `Set-cookie` ở response, vậy nên ta sẽ cố gắng chèn thêm `Set-cookie` ở response bằng cách dùng `%0d%0a` là `\r\n`:
+
+![alt text](image-6.png)
+
+Payload: 
+
+```js
+<form action="https://0aec003503cf58e580948f3d0053007b.web-security-academy.net/my-account/change-email" method="POST">
+    <input type="hidden" name="email" value="absssa&#64;gmail&#46;net" />
+    <input type="hidden" name="csrf" value="4ZTQjukf9UX8toqgbTThbm8F16k9F2jO" />
+    <input type="submit" value="Submit request" />
+</form>
+
+
+<img src="https://YOUR-LAB-ID.web-security-academy.net/?search=test%0d%0aSet-Cookie:%20csrfKey=YOUR-KEY%3b%20SameSite=None" onerror="document.forms[0].submit()">
+```
+
+---
+
+### 6. CSRF where token is duplicated in cookie
+https://portswigger.net/web-security/csrf/bypassing-token-validation/lab-token-duplicated-in-cookie
+
+
 
 
