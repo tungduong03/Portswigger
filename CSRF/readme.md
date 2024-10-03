@@ -138,6 +138,8 @@ Payload:
 </script>
 ```
 
+Tham khảo cách khác để ghi đè method: https://www.sidechannel.blog/en/http-method-override-what-it-is-and-how-a-pentester-can-use-it/
+
 ---
 
 ### 8. SameSite Strict bypass via client-side redirect
