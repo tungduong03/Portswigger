@@ -24,7 +24,22 @@ Thay đổi `alg` thành `none`:\
 
 ---
 
-## 3. 
+## 3. JWT authentication bypass via weak signing key
+https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-weak-signing-key
+
+Context: Secret key dễ đoán 
+
+Brute-force: `hashcat -a 0 -m 16500 <YOUR-JWT> /path/to/jwt.secrets.list`
+
+![alt text](image-6.png)
+
+![alt text](image-7.png)
+
+---
+
+## 4. JWT authentication bypass via jwk header injection
+https://portswigger.net/web-security/jwt/lab-jwt-authentication-bypass-via-jwk-header-injection
+
 
 
 

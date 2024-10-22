@@ -7,7 +7,7 @@ Context: trusted all origin
 
 ![alt text](image.png)
 
-Trong response có `Access-Control-Allow-Credentials: True` 
+Trong response có `Access-Control-Allow-Credentials: True` nó cho phép mang cookie hoặc authorization client có khi truy cập từ orgin khác. 
 
 Test:
 
@@ -50,3 +50,7 @@ hoặc
     </body>
 </html>
 ```
+
+--- 
+
+### 2. 
