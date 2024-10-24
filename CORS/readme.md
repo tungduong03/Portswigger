@@ -100,5 +100,9 @@ Ta chú ý: xuất phát từ `stock.` là trang bị XSS nhưng CORS cho phép,
 
 Có 1 điểm đặc biệt nghiêm trọng trong CORS là `Access-Control-Allow-Credentials: true` vì khi có header này tức là khi ta request đến trang đó, nó sẽ cho phép lấy các authorization hoặc cookie mà client đã truy cập trước đó để request, thì sẽ tự động vào phiên của người dùng trước đó, còn nếu không có thì dù có truy cập được nhưng vẫn chỉ là trang web chung, vì ko có tính cá nhân victim trong đó. 
 
+## How to prevent
+- Chỉ cho phép các trang web đáng tin cậy
+- Tránh để null vào whitelist
+- Tránh sử dụng `*` cho mạng nội bộ 
 
  
