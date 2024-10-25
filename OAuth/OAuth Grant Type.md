@@ -32,7 +32,7 @@ Sau khi đăng nhập, người dùng sẽ được trình bày một danh sách
 
 Điều quan trọng cần lưu ý là, một khi người dùng đã phê duyệt một scope nhất định cho một ứng dụng khách, bước này sẽ được hoàn tất tự động miễn là người dùng vẫn còn phiên làm việc hợp lệ với dịch vụ OAuth. Nói cách khác, lần đầu tiên người dùng chọn "Đăng nhập bằng tài khoản mạng xã hội", họ sẽ cần đăng nhập thủ công và cho phép quyền truy cập. Tuy nhiên, nếu họ quay lại ứng dụng khách sau đó, họ thường có thể đăng nhập lại chỉ với một cú nhấp chuột.
 ## 3. Authorization code grant - Cấp phép mã ủy quyền
-Nếu người dùng đồng ý với quyền truy cập đã yêu cầu, trình duyệt của họ sẽ được chuyển hướng đến endpoint `/callback` đã được chỉ định trong tham số redirect_uri của yêu cầu ủy quyền. Yêu cầu GET kết quả sẽ chứa mã ủy quyền dưới dạng một tham số truy vấn. Tùy thuộc vào cấu hình, nó cũng có thể gửi tham số state với cùng giá trị như trong yêu cầu ủy quyền.
+Nếu người dùng đồng ý với quyền truy cập đã yêu cầu, trình duyệt của họ sẽ được chuyển hướng đến endpoint `/callback` đã được chỉ định trong tham số `redirect_uri` của yêu cầu ủy quyền. Yêu cầu GET kết quả sẽ chứa mã ủy quyền dưới dạng một tham số truy vấn. Tùy thuộc vào cấu hình, nó cũng có thể gửi tham số `state` với cùng giá trị như trong yêu cầu ủy quyền.
 
 ```http
 GET /callback?code=a1b2c3d4e5f6g7h8&state=ae13d489bd00e3c24 HTTP/1.1

