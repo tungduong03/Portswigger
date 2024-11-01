@@ -1,5 +1,5 @@
 # Path traversal
-Trong phần này, chúng tôi giải thích:
+Nội dung: 
 - Path traversal là gì
 - Cách thực hiện các cuộc tấn công path traversal và vượt qua các chướng ngại vật thông thường.
 - cách ngăn ngừa path traversal vulnerabilities.
