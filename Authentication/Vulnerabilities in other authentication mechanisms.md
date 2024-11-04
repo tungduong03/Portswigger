@@ -1,10 +1,9 @@
 # Vulnerabilities in other authentication mechanisms
-Ngoài chức năng đăng nhập cơ bản, hầu hết các trang web đều cung cấp chức năng bổ sung để cho phép người dùng quản lý tài khoản của họ. Ví dụ: người dùng thường có thể thay đổi mật khẩu hoặc đặt lại mật khẩu khi quên. Các cơ chế này cũng có thể tạo ra các lỗ hổng mà kẻ tấn công có thể khai thác.\
-Các trang web thường cẩn thận để tránh các lỗ hổng phổ biến trong trang đăng nhập của họ. Nhưng thật dễ dàng để bỏ qua thực tế là bạn cần thực hiện các bước tương tự để đảm bảo rằng chức năng liên quan cũng mạnh mẽ như nhau. Điều này đặc biệt quan trọng trong trường hợp kẻ tấn công có thể tạo tài khoản của riêng mình và do đó có thể dễ dàng truy cập để nghiên cứu các trang bổ sung này.
+Ngoài chức năng đăng nhập cơ bản, các trang web thường cung cấp các tính năng bổ sung cho người dùng quản lý tài khoản như thay đổi hoặc đặt lại mật khẩu. Những cơ chế này có thể chứa lỗ hổng mà kẻ tấn công có thể khai thác. Vì vậy, việc bảo vệ các chức năng liên quan cũng quan trọng như bảo vệ trang đăng nhập chính.
 ## Keeping users logged in
-Một tính năng phổ biến là tùy chọn duy trì trạng thái đăng nhập ngay cả sau khi đóng phiên trình duyệt. Đây thường là một hộp kiểm đơn giản được gắn nhãn như "**Remember me**" hoặc "**Keep me logged in**".\
-Chức năng này thường được triển khai bằng cách tạo ra một loại mã token "remember me", sau đó được lưu trữ trong một cookie liên tục. Vì việc sở hữu cookie này một cách hiệu quả cho phép bạn bỏ qua toàn bộ quá trình đăng nhập, cách tốt nhất là không nên đoán cookie này. Tuy nhiên, một số trang web tạo cookie này dựa trên sự kết hợp có thể dự đoán được của các giá trị tĩnh, chẳng hạn như tên người dùng và dấu thời gian. Một số thậm chí còn sử dụng mật khẩu như một phần của cookie. Cách tiếp cận này đặc biệt nguy hiểm nếu kẻ tấn công có thể tạo tài khoản của riêng mình vì chúng có thể nghiên cứu cookie của riêng mình và có khả năng suy ra cách nó được tạo ra. Sau khi tìm ra công thức, họ có thể cố gắng ép buộc cookie của người dùng khác để có quyền truy cập vào tài khoản của họ.\
-Một số trang web cho rằng nếu cookie được mã hóa theo cách nào đó thì sẽ không thể đoán được ngay cả khi nó sử dụng các giá trị tĩnh. Mặc dù điều này có thể đúng nếu được thực hiện chính xác, nhưng việc "mã hóa" cookie một cách ngây thơ bằng cách sử dụng mã hóa hai chiều đơn giản như Base64 không mang lại bất kỳ sự bảo vệ nào. Ngay cả việc sử dụng mã hóa thích hợp với hàm băm một chiều cũng không hoàn toàn chống đạn. Nếu kẻ tấn công có thể dễ dàng xác định thuật toán băm và không sử dụng muối, thì chúng có khả năng tấn công cookie bằng cách băm danh sách từ của chúng. Phương pháp này có thể được sử dụng để vượt qua giới hạn số lần đăng nhập nếu giới hạn tương tự không được áp dụng cho việc đoán cookie.
+
+Tính năng "**Remember me**" hoặc "**Keep me logged in**" thường được triển khai bằng cách tạo ra một **cookie "remember me"** lưu trữ mã token để duy trì đăng nhập. Lỗ hổng xảy ra khi cookie này được tạo dựa trên giá trị có thể đoán được như tên người dùng, thời gian hoặc mật khẩu băm. Kẻ tấn công có thể tạo tài khoản của riêng mình, phân tích cách cookie được tạo ra và sử dụng thông tin này để brute-force cookie của người dùng khác nhằm truy cập tài khoản của họ.
+
 
 Ví dụ: https://portswigger.net/web-security/authentication/other-mechanisms/lab-brute-forcing-a-stay-logged-in-cookie
 
@@ -22,8 +21,7 @@ Từ đây ta brute-force cho `carlos` với cookie `stay-logged-in` dạng base
 ![alt text](image-25.png)\
 ![alt text](image-26.png)
 
-Ngay cả khi kẻ tấn công không thể tạo tài khoản của riêng mình, chúng vẫn có thể khai thác lỗ hổng này. Bằng cách sử dụng các kỹ thuật thông thường, chẳng hạn như XSS, kẻ tấn công có thể đánh cắp cookie "remember me" của người dùng khác và suy ra cách tạo cookie từ đó. Nếu trang web được xây dựng bằng khung nguồn mở thì các chi tiết chính về cấu trúc cookie thậm chí có thể được ghi lại công khai.\
-Trong một số trường hợp hiếm hoi, có thể lấy được mật khẩu thực của người dùng ở dạng văn bản rõ ràng từ cookie, ngay cả khi nó được băm. Các phiên bản băm của danh sách mật khẩu phổ biến có sẵn trực tuyến, vì vậy nếu mật khẩu của người dùng xuất hiện trong một trong các danh sách này, việc giải mã hàm băm đôi khi có thể đơn giản như chỉ cần dán hàm băm vào công cụ tìm kiếm. Điều này chứng tỏ tầm quan trọng của muối trong việc mã hóa hiệu quả.
+Một lỗ hổng khác là sử dụng các kỹ thuật như **XSS** để đánh cắp cookie "remember me". Kẻ tấn công có thể suy ra cách tạo cookie và từ đó truy cập tài khoản của nạn nhân.
 
 Ví dụ: https://portswigger.net/web-security/authentication/other-mechanisms/lab-offline-password-cracking
 
@@ -40,12 +38,13 @@ Predict đoạn hash:
 
 Bây giờ ta đã có thể đăng nhập với `carlos`.
 ## Resetting user passwords
-Trong thực tế, một số người dùng sẽ quên mật khẩu của họ, vì vậy thông thường sẽ có cách để họ đặt lại mật khẩu. Vì xác thực dựa trên mật khẩu thông thường rõ ràng là không thể thực hiện được trong trường hợp này nên các trang web phải dựa vào các phương pháp thay thế để đảm bảo rằng người dùng thực đang đặt lại mật khẩu của chính họ. Vì lý do này, chức năng đặt lại mật khẩu vốn rất nguy hiểm và cần phải được thực hiện một cách an toàn.\
-Có một số cách khác nhau mà tính năng này thường được triển khai với mức độ dễ bị tổn thương khác nhau.
+
+Đặt lại mật khẩu là một tính năng nhạy cảm, và nếu không được triển khai đúng cách, có thể tạo ra lỗ hổng nghiêm trọng. Có nhiều cách mà chức năng này được triển khai với các mức độ an toàn khác nhau.
+
 ### Sending passwords by email
-Cần phải nói rằng việc gửi cho người dùng mật khẩu hiện tại của họ sẽ không bao giờ thực hiện được nếu trang web xử lý mật khẩu một cách an toàn ngay từ đầu. Thay vào đó, một số trang web tạo mật khẩu mới và gửi mật khẩu này cho người dùng qua email.\
-Nói chung, cần tránh gửi mật khẩu liên tục qua các kênh không an toàn. Trong trường hợp này, tính bảo mật dựa vào việc mật khẩu được tạo sẽ hết hạn sau **một khoảng thời gian rất ngắn hoặc người dùng thay đổi lại mật khẩu của họ ngay lập tức**. Mặt khác, cách tiếp cận này rất dễ bị tấn công bởi kẻ trung gian.\
-Email thường không được coi là an toàn vì hộp thư đến vừa cố định vừa không thực sự được thiết kế để lưu trữ an toàn thông tin bí mật. Nhiều người dùng cũng tự động đồng bộ hóa hộp thư đến của họ giữa nhiều thiết bị trên các kênh không an toàn.
+
+Một số trang web gửi mật khẩu mới qua email. Đây là cách tiếp cận nguy hiểm, vì email thường không an toàn và dễ bị chặn. Thay vào đó, tốt hơn là gửi một URL để đặt lại mật khẩu.
+
 
 ### Resetting passwords using a URL
 Một phương pháp đặt lại mật khẩu mạnh mẽ hơn là gửi một URL duy nhất tới người dùng để đưa họ đến trang đặt lại mật khẩu. Việc triển khai phương pháp này kém an toàn hơn sử dụng URL có tham số dễ đoán để xác định tài khoản nào đang được đặt lại, ví dụ:\
