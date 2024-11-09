@@ -85,10 +85,110 @@ x=1
 ```
 Nó sẽ làm chuyển hướng request đến exploit server
 
+---
 
+## Request smuggling via CRLF injection
+Ngay cả khi các trang web thực hiện các bước để ngăn chặn các cuộc tấn công `H2.CL` hoặc `H2.TE` cơ bản, chẳng hạn như xác thực giá trị `content-length` hoặc loại bỏ bất kỳ header `transfer-encoding` nào, định dạng nhị phân của HTTP/2 lại mở ra một số cách mới để vượt qua các biện pháp của front-end.
 
+Trong HTTP/1, đôi khi bạn có thể khai thác sự khác biệt giữa cách các máy chủ xử lý ký tự xuống dòng độc lập (`\n`) để tiêm thêm các header bị cấm. Nếu back-end xem đây là một ký tự phân tách, nhưng front-end thì không, một số máy chủ front-end sẽ không phát hiện được header thứ hai.
 
+```http
+Foo: bar\nTransfer-Encoding: chunked
+```
 
+Sự khác biệt này không tồn tại khi sử dụng một chuỗi CRLF (`\r\n`) đầy đủ, vì tất cả các máy chủ HTTP/1 đều coi đây là ký tự kết thúc header.
+
+Tuy nhiên, vì các thông điệp HTTP/2 là nhị phân chứ không phải dạng văn bản, nên các ranh giới của mỗi header được xác định bằng các điểm dừng cụ thể, không dựa trên ký tự phân tách. Điều này có nghĩa là `\r\n` không còn mang ý nghĩa đặc biệt nào trong giá trị của header nữa và do đó, có thể được đưa vào bên trong giá trị mà không khiến header bị tách ra:
+
+```
+foo	bar\r\nTransfer-Encoding: chunked
+```
+Điều này có vẻ không gây hại ngay từ đầu, nhưng khi nó được chuyển thành yêu cầu HTTP/1, \r\n lại được hiểu như một ký tự phân tách header. Kết quả là, máy chủ back-end HTTP/1 sẽ thấy hai header riêng biệt:
+
+```http
+Foo: bar
+Transfer-Encoding: chunked
+```
+Điều này có thể mở ra cơ hội để tiêm thêm header `Transfer-Encoding` mà back-end không mong đợi, từ đó gây ra các cuộc tấn công request smuggling.
+
+---
+
+## 2. HTTP/2 request smuggling via CRLF injection
+https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-h2-request-smuggling-via-crlf-injection
+
+Với bài này ta sẽ dùng HTTP/2 và inject 1 header bằng `\r\n` và vì front-end sẽ không phát hiện được nên nó sẽ không xóa và bên back-end sẽ xử lí sai
+
+![alt text](image-25.png)\
+![alt text](image-26.png)\
+![alt text](image-24.png)
+
+---
+
+## HTTP/2 request splitting
+
+Ở HTTP/1.1 ta sẽ chia 2 request qua phần body của request 1, nhưng với HTTP/2 ta có thể chia thành 2 request qua Header.
+
+Cách tiếp cận này linh hoạt hơn vì bạn không phụ thuộc vào các phương thức yêu cầu cho phép chứa body. Nên có thể sử dụng một yêu cầu GET:
+
+```http
+        :method	        GET
+        :path	        /
+        :authority	    vulnerable-website.com
+        foo	
+                        bar\r\n
+                        \r\n
+                        GET /admin HTTP/1.1\r\n
+                        Host: vulnerable-website.com
+```
+Điều này cũng hữu ích trong các trường hợp `content-length` được xác thực và back-end không hỗ trợ mã hóa chunked.
+
+### Xử lý việc rewrite của front-end
+Để chia một yêu cầu trong phần header, bạn cần hiểu cách yêu cầu được rewrite bởi máy chủ front-end và tính đến điều này khi thêm bất kỳ header HTTP/1 nào theo cách thủ công. Nếu không, một trong các yêu cầu có thể thiếu các header bắt buộc.
+
+Ví dụ, bạn cần đảm bảo rằng cả hai yêu cầu nhận được bởi back-end đều chứa một header `Host`. Các máy chủ front-end thường loại bỏ pseudo-header `:authority` và thay thế bằng một header `Host` mới khi chuyển đổi. Có nhiều cách thực hiện việc này, điều này có thể ảnh hưởng đến vị trí bạn cần thêm header `Host`.
+
+Xem xét yêu cầu sau:
+```
+        :method	        GET
+        :path	        /
+        :authority	    vulnerable-website.com
+        foo	
+                        bar\r\n
+                        \r\n
+                        GET /admin HTTP/1.1\r\n
+                        Host: vulnerable-website.com
+```
+Trong quá trình rewrite, một số máy chủ front-end thêm header `Host` mới vào cuối danh sách header hiện tại. Với front-end HTTP/2, điều này nằm sau header `foo` và cũng sau điểm mà yêu cầu sẽ bị chia tách ở back-end. Điều này có nghĩa là yêu cầu đầu tiên sẽ không có header `Host`, trong khi yêu cầu smuggled sẽ có hai header `Host`. Trong trường hợp này, bạn cần đặt header `Host` để nó nằm trong yêu cầu đầu tiên sau khi việc chia tách xảy ra:
+```
+        :method	        GET
+        :path	        /
+        :authority	    vulnerable-website.com
+        foo	
+                        bar\r\n
+                        Host: vulnerable-website.com\r\n
+                        \r\n
+                        GET /admin HTTP/1.1
+```
+Bạn cũng sẽ cần điều chỉnh vị trí của bất kỳ header nội bộ nào mà bạn muốn thêm theo cách tương tự.
+
+---
+
+## 3. HTTP/2 request splitting via CRLF injection
+https://portswigger.net/web-security/request-smuggling/advanced/lab-request-smuggling-h2-request-splitting-via-crlf-injection
+
+ở context bài này ta sẽ dùng HTTP/2 để smuggling nên ta sẽ inject ở phần header. 
+
+ta sẽ thêm 1 header `foo` với value 
+```bar\r\n
+\r\n
+GET /x HTTP/1.1\r\n
+Host: YOUR-LAB-ID.web-security-academy.net
+``` 
+việc này với front-end nó sẽ gửi đi request nhưng khi back-end xử lí và down-grade xuống HTTP/1.1 thì nó sẽ tách ra thành 2 request, điều này giúp request thứ 2 nằm trong bộ xử lí của back-end, khi có 1 victim gửi request đến sẽ nhận được response của request `GET /x` đang chờ đó và nếu mình gửi 1 request vào thời điểm ngay sau đó sẽ nhận được response của victim vừa gửi. 
+![alt text](image-28.png)
+
+vậy nên cách tấn công này cần gửi request nhiều lần và hầu như nhận về 404 là `GET /x` và 200 và chỉ 1 vài 302 là khi victim đăng nhập và được chuyển hướng ta sẽ bắt request này để lấy được session và đưa vào đăng nhập, và đưa vào request `GET /admin` ta cũng cần gửi nhiều lần vì đôi lúc sẽ nhận được 404 còn sót response nằm trong hàng chờ:\
+![alt text](image-27.png)
 
 
 
