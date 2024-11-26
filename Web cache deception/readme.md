@@ -44,10 +44,10 @@ Nói chung, việc xây dựng một cuộc tấn công lừa đảo bộ đệm
 Trong quá trình thử nghiệm, điều quan trọng là bạn có thể xác định được các phản hồi được lưu trong bộ nhớ đệm. Để làm như vậy, hãy xem tiêu đề phản hồi và thời gian phản hồi.\
 Các tiêu đề phản hồi khác nhau có thể cho biết rằng nó đã được lưu vào bộ nhớ đệm. Ví dụ:
 - Tiêu đề `X-Cache` cung cấp thông tin về việc liệu phản hồi có được cung cấp từ bộ đệm hay không. Các giá trị điển hình bao gồm:
-    - `X-Cache: hit` - Phản hồi được cung cấp từ bộ đệm.
-    - `X-Cache: miss` - Bộ đệm không chứa phản hồi cho khóa của yêu cầu nên nó đã được tìm nạp từ máy chủ gốc. Trong hầu hết các trường hợp, phản hồi sau đó sẽ được lưu vào bộ nhớ đệm. Để xác nhận điều này, hãy gửi lại yêu cầu để xem liệu giá trị có cập nhật hay không.
-    - `X-Cache: dynamic` - Máy chủ gốc tự động tạo nội dung. Nói chung điều này có nghĩa là phản hồi không phù hợp để lưu vào bộ nhớ đệm.
-    - `X-Cache: refresh` - Nội dung được lưu trong bộ nhớ đệm đã lỗi thời và cần được làm mới hoặc xác thực lại.
+    - `X-Cache: hit` - Phản hồi được cung cấp từ Cache.
+    - `X-Cache: miss` - Cache không chứa phản hồi cho khóa của yêu cầu nên nó đã được tìm nạp từ máy chủ gốc. Trong hầu hết các trường hợp, phản hồi sau đó sẽ được lưu vào bộ nhớ đệm. Để xác nhận điều này, hãy gửi lại yêu cầu để xem liệu giá trị có cập nhật hay không.
+    - `X-Cache: dynamic` - Máy chủ gốc tự động tạo nội dung. Nói chung điều này có nghĩa là phản hồi **không phù hợp để lưu vào cache**.
+    - `X-Cache: refresh` - Nội dung được lưu trong Cache đã lỗi thời và cần được làm mới hoặc xác thực lại.
 - Tiêu đề `Cache-Control` có thể bao gồm một lệnh cho biết bộ nhớ đệm, như `pulic` với `max-age` cao hơn `0`. Lưu ý rằng điều này chỉ gợi ý rằng tài nguyên có thể lưu vào bộ đệm. Nó không phải lúc nào cũng biểu thị bộ đệm, vì bộ đệm đôi khi có thể ghi đè tiêu đề này.
 
 Nếu bạn nhận thấy sự khác biệt lớn về thời gian phản hồi cho cùng một yêu cầu, điều này cũng có thể cho thấy rằng bộ nhớ đệm cung cấp phản hồi nhanh hơn.
@@ -57,19 +57,19 @@ Nếu có sự khác biệt về cách bộ đệm và máy chủ gốc ánh x�
 ### Path mapping discrepancies
 Ánh xạ đường dẫn URL là quá trình liên kết đường dẫn URL với tài nguyên trên máy chủ, chẳng hạn như tệp, tập lệnh hoặc thực thi lệnh. Có nhiều kiểu ánh xạ khác nhau được sử dụng bởi các khung và công nghệ khác nhau. Hai kiểu phổ biến là ánh xạ URL truyền thống và ánh xạ URL RESTful.\
 Ánh xạ URL truyền thống biểu thị đường dẫn trực tiếp đến tài nguyên nằm trên hệ thống tệp. Đây là một ví dụ điển hình:\
-`http://example.com/path/in/filesystem/resource.html`\
+`http://example.com/path/in/filesystem/resource.html`
 - `http://example.com` trỏ đến máy chủ.
 - `/path/in/filesystem/` đại diện cho đường dẫn thư mục trong hệ thống tệp của máy chủ.
 - `resource.html` là tệp cụ thể đang được truy cập.
 
 Ngược lại, các URL kiểu REST không khớp trực tiếp với cấu trúc tệp vật lý. Họ trừu tượng hóa các đường dẫn tệp thành các phần logic của API:\
-`http://example.com/path/resource/param1/param2`\
+`http://example.com/path/resource/param1/param2`
 - `http://example.com` trỏ đến máy chủ.
 - `/path/resource/` là điểm cuối đại diện cho tài nguyên.
 - `param1` và `param2` là các tham số đường dẫn được máy chủ sử dụng để xử lý yêu cầu.
 
 Sự khác biệt trong cách bộ đệm và máy chủ gốc ánh xạ đường dẫn URL tới tài nguyên có thể dẫn đến lỗ hổng đánh lừa bộ đệm web. Hãy xem xét ví dụ sau:\
-`http://example.com/user/123/profile/wcd.css`\
+`http://example.com/user/123/profile/wcd.css`
 - Máy chủ gốc sử dụng ánh xạ URL kiểu REST có thể hiểu đây là yêu cầu cho điểm cuối `/user/123/profile` và trả về thông tin hồ sơ cho người dùng `123`, bỏ qua `wcd.css` như một tham số không quan trọng.
 - Bộ nhớ đệm sử dụng ánh xạ URL truyền thống có thể xem đây là yêu cầu đối với tệp có tên `wcd.css` nằm trong thư mục `/profile` bên dưới `/user/123`. Nó diễn giải đường dẫn URL là `/user/123/profile/wcd.css`. Nếu bộ nhớ đệm được định cấu hình để lưu trữ phản hồi cho các yêu cầu có đường dẫn kết thúc bằng `.css`, thì nó sẽ lưu vào bộ nhớ đệm và cung cấp thông tin hồ sơ như thể đó là một tệp `CSS`.
 ### Exploiting path mapping discrepancies
@@ -81,7 +81,76 @@ Sự khác biệt trong cách bộ đệm và máy chủ gốc ánh xạ đườ
 Bộ nhớ đệm có thể có các quy tắc dựa trên các tiện ích mở rộng tĩnh cụ thể. Hãy thử nhiều tiện ích mở rộng, bao gồm `.css`, `.ico` và `.exe`.\
 Sau đó, bạn có thể tạo một URL trả về phản hồi động được lưu trữ trong bộ đệm. Lưu ý rằng cuộc tấn công này được giới hạn ở điểm cuối cụ thể mà bạn đã thử nghiệm, vì máy chủ gốc thường có các quy tắc trừu tượng khác nhau cho các điểm cuối khác nhau.
 
+---
+
+## 1. Exploiting path mapping for web cache deception
+
 Ví dụ: https://portswigger.net/web-security/web-cache-deception/lab-wcd-exploiting-path-mapping
+
+Đăng nhập với account `wiener:peter` sau đó vào `/my-account`
+
+Thêm path `abc.js` request `/my-account/abc.js` ta thấy nó vẫn phản hồi như bình thường.
+
+Từ đó ta suy ra server chỉ phân tích đến `/my-account` thôi
+
+Mặt khác, ta thấy response có `X-Cache: miss` 
+
+
+---
+
+### Delimiter discrepancies - Không đồng nhất về dấu phân cách
+Dấu phân cách xác định các ranh giới giữa các phần tử khác nhau trong URL. Việc sử dụng các ký tự và chuỗi làm dấu phân cách thường được chuẩn hóa. Ví dụ, dấu `?` thường được sử dụng để tách đường dẫn URL khỏi chuỗi truy vấn. Tuy nhiên, vì RFC của URI khá linh hoạt, sự khác biệt vẫn xảy ra giữa các framework hoặc công nghệ khác nhau.
+
+Sự không đồng nhất trong cách mà máy chủ cache và máy chủ gốc sử dụng các ký tự và chuỗi làm dấu phân cách có thể dẫn đến các lỗ hổng lừa đảo bộ nhớ cache (web cache deception). Hãy xem ví dụ sau: `/profile;foo.css`:
+
+- Framework Java Spring sử dụng ký tự `;` để thêm các tham số gọi là biến ma trận (matrix variables). Do đó, một máy chủ gốc sử dụng Java Spring sẽ coi ; là dấu phân cách, cắt đường dẫn sau /profile và trả về thông tin hồ sơ.
+
+- Hầu hết các framework khác không sử dụng ; làm dấu phân cách. Do đó, một bộ nhớ cache không sử dụng Java Spring có thể hiểu ; và mọi thứ sau nó như một phần của đường dẫn. Nếu bộ nhớ cache có quy tắc lưu trữ phản hồi cho các yêu cầu kết thúc bằng .css, nó có thể lưu và phục vụ thông tin hồ sơ như thể đó là một tệp CSS.
+
+Điều này cũng đúng với các ký tự khác được sử dụng không nhất quán giữa các framework hoặc công nghệ. Hãy xem các yêu cầu sau đến một máy chủ gốc chạy framework Ruby on Rails, nơi sử dụng dấu . làm dấu phân cách để chỉ định định dạng phản hồi:
+
+/profile – Yêu cầu này được xử lý bởi bộ định dạng HTML mặc định, trả về thông tin hồ sơ người dùng.
+/profile.css – Yêu cầu này được nhận diện là phần mở rộng CSS. Không có bộ định dạng CSS, vì vậy yêu cầu này không được chấp nhận và trả về lỗi.
+/profile.ico – Yêu cầu này sử dụng phần mở rộng .ico, không được Ruby on Rails nhận diện. Bộ định dạng HTML mặc định xử lý yêu cầu và trả về thông tin hồ sơ người dùng. Trong tình huống này, nếu bộ nhớ cache được cấu hình để lưu trữ phản hồi cho các yêu cầu kết thúc bằng .ico, nó sẽ lưu và phục vụ thông tin hồ sơ như thể đó là một tệp tĩnh.
+Các ký tự mã hóa cũng có thể được sử dụng làm dấu phân cách. Ví dụ, hãy xem yêu cầu /profile%00foo.js:
+
+Máy chủ OpenLiteSpeed sử dụng ký tự null đã mã hóa %00 làm dấu phân cách. Do đó, một máy chủ gốc sử dụng OpenLiteSpeed sẽ hiểu đường dẫn là /profile.
+Hầu hết các framework khác sẽ trả về lỗi nếu %00 xuất hiện trong URL. Tuy nhiên, nếu bộ nhớ cache sử dụng Akamai hoặc Fastly, nó sẽ hiểu %00 và mọi thứ sau đó như là một phần của đường dẫn.
+
+### Lợi dụng sự không đồng nhất về dấu phân cách
+
+Bạn có thể lợi dụng sự không đồng nhất về dấu phân cách để thêm một phần mở rộng tĩnh vào đường dẫn mà bộ nhớ cache thấy, nhưng máy chủ gốc không thấy. Để làm điều này, bạn cần xác định một ký tự được sử dụng làm dấu phân cách bởi máy chủ gốc nhưng không phải bộ nhớ cache.
+
+Đầu tiên, hãy tìm các ký tự được sử dụng làm dấu phân cách bởi máy chủ gốc. Bắt đầu quá trình này bằng cách thêm một chuỗi tùy ý vào URL của điểm cuối mục tiêu. Ví dụ, sửa đổi /settings/users/list thành /settings/users/listaaa. Bạn sẽ sử dụng phản hồi này làm tham chiếu khi bắt đầu thử nghiệm các ký tự dấu phân cách.
+
+Lưu ý: Nếu phản hồi giống với phản hồi gốc, điều này có thể chỉ ra rằng yêu cầu đang được chuyển hướng. Bạn sẽ cần chọn một điểm cuối khác để thử nghiệm.
+
+Tiếp theo, hãy thêm một ký tự dấu phân cách có thể có giữa đường dẫn gốc và chuỗi tùy ý, ví dụ, /settings/users/list;aaa:
+
+Nếu phản hồi giống với phản hồi gốc, điều này cho thấy ký tự ; được sử dụng làm dấu phân cách và máy chủ gốc hiểu đường dẫn là /settings/users/list.
+Nếu phản hồi giống với phản hồi cho đường dẫn với chuỗi tùy ý, điều này cho thấy ký tự ; không được sử dụng làm dấu phân cách và máy chủ gốc hiểu đường dẫn là /settings/users/list;aaa.
+Sau khi xác định các dấu phân cách được sử dụng bởi máy chủ gốc, hãy thử nghiệm xem chúng có được bộ nhớ cache sử dụng hay không. Để làm điều này, hãy thêm một phần mở rộng tĩnh vào cuối đường dẫn. Nếu phản hồi bị bộ nhớ cache, điều này chỉ ra rằng:
+
+Bộ nhớ cache không sử dụng dấu phân cách và hiểu toàn bộ đường dẫn URL với phần mở rộng tĩnh.
+Có một quy tắc bộ nhớ cache lưu trữ phản hồi cho các yêu cầu kết thúc bằng .js.
+Hãy chắc chắn thử tất cả các ký tự ASCII và một loạt các phần mở rộng phổ biến, bao gồm .css, .ico, và .exe. Chúng tôi đã cung cấp danh sách các ký tự dấu phân cách tiềm năng để bạn bắt đầu trong các phòng thí nghiệm, xem danh sách dấu phân cách trong phòng thí nghiệm Web cache deception. Sử dụng Burp Intruder để thử nghiệm nhanh các ký tự này. Để ngừng Burp Intruder mã hóa các ký tự dấu phân cách, tắt tính năng mã hóa tự động của Burp Intruder trong phần Payload encoding ở bảng điều khiển Payloads.
+
+Bạn có thể xây dựng một cuộc tấn công khai thác quy tắc bộ nhớ cache cho phần mở rộng tĩnh. Ví dụ, xem payload /settings/users/list;aaa.js. Máy chủ gốc sử dụng ; làm dấu phân cách:
+
+Bộ nhớ cache hiểu đường dẫn là: /settings/users/list;aaa.js
+Máy chủ gốc hiểu đường dẫn là: /settings/users/list
+Máy chủ gốc trả về thông tin hồ sơ động, được lưu trữ trong bộ nhớ cache.
+Vì dấu phân cách thường được sử dụng đồng nhất trong mỗi máy chủ, bạn có thể thường xuyên sử dụng cuộc tấn công này trên nhiều điểm cuối khác nhau.
+
+Lưu ý: Một số ký tự dấu phân cách có thể được trình duyệt của nạn nhân xử lý trước khi chuyển tiếp yêu cầu đến bộ nhớ cache. Điều này có nghĩa là một số dấu phân cách không thể được sử dụng trong cuộc tấn công. Ví dụ, trình duyệt mã hóa các ký tự như {, }, <, và >, và sử dụng # để cắt ngắn đường dẫn.
+
+Nếu bộ nhớ cache hoặc máy chủ gốc giải mã các ký tự này, có thể sử dụng phiên bản mã hóa trong một cuộc tấn công.
+
+
+
+
+
+
 
 
 
