@@ -178,7 +178,7 @@ Note: Khi thử kỹ thuật này trong Burp, hãy nhớ chuyển sang tab `Raw`
 
 ### Charset override
 
-Máy chủ Express thường triển khai các mô-đun "phần mềm trung gian" cho phép xử lý trước các yêu cầu trước khi chúng được chuyển đến hàm xử lý thích hợp. Ví dụ, mô-đun body-parser thường được sử dụng để phân tích nội dung của các yêu cầu đến nhằm tạo ra đối tượng `req.body`. Phần này chứa một tiện ích khác mà bạn có thể sử dụng để thăm dò ô nhiễm nguyên mẫu phía máy chủ.
+Máy chủ Express thường triển khai các mô-đun "phần mềm trung gian" cho phép xử lý trước các yêu cầu trước khi chúng được chuyển đến hàm xử lý thích hợp. Ví dụ, mô-đun `body-parser` thường được sử dụng để phân tích nội dung của các yêu cầu đến nhằm tạo ra đối tượng `req.body`. Phần này chứa một tiện ích khác mà bạn có thể sử dụng để thăm dò ô nhiễm nguyên mẫu phía máy chủ.
 
 Lưu ý rằng đoạn mã sau truyền một đối tượng tùy chọn vào hàm `read()`, được sử dụng để đọc nội dung yêu cầu để phân tích cú pháp. Một trong những tùy chọn này, mã hóa, xác định mã hóa ký tự nào sẽ sử dụng. Mã hóa này có thể được lấy từ chính yêu cầu thông qua lệnh gọi hàm `getCharset(req)` hoặc mặc định là UTF-8.
 
@@ -201,9 +201,152 @@ read(req, res, next, parse, debug, {
 })
 ```
 
-Nếu bạn xem xét kỹ hàm `getCharset()`, có vẻ như các nhà phát triển đã dự đoán rằng tiêu đề Content-Type có thể không chứa thuộc tính charset rõ ràng, vì vậy họ đã triển khai một số logic để chuyển về chuỗi rỗng trong trường hợp này. Điều quan trọng là, điều này có nghĩa là có thể kiểm soát được thông qua ô nhiễm nguyên mẫu.
+Nếu bạn xem xét kỹ hàm `getCharset()`, có vẻ như các nhà phát triển đã dự đoán rằng tiêu đề `Content-Type` có thể không chứa thuộc tính `charset` rõ ràng, vì vậy họ đã triển khai một số logic để chuyển về chuỗi rỗng trong trường hợp này. Điều quan trọng là, điều này có nghĩa là có thể kiểm soát được thông qua ô nhiễm nguyên mẫu.
 
+Nếu bạn có thể tìm thấy một đối tượng có thuộc tính hiển thị trong phản hồi, bạn có thể sử dụng đối tượng này để thăm dò nguồn. Trong ví dụ sau, chúng ta sẽ sử dụng mã hóa `UTF-7` và nguồn `JSON`. 
 
+1. Thêm một chuỗi mã hóa `UTF-7` tùy ý vào một thuộc tính được phản ánh trong phản hồi. Ví dụ, `foo` trong `UTF-7` là `+AGYAbwBv-`.
+
+2. Gửi yêu cầu. Theo mặc định, máy chủ sẽ không sử dụng mã hóa UTF-7, do đó chuỗi này sẽ xuất hiện trong phản hồi dưới dạng đã mã hóa.
+
+3. Hãy thử làm ô nhiễm nguyên mẫu bằng thuộc tính content-type chỉ định rõ ràng bộ ký tự UTF-7:
+
+```json
+{
+    "sessionId":"0123456789",
+    "username":"wiener",
+    "role":"default",
+    "__proto__":{
+        "content-type": "application/json; charset=utf-7"
+    }
+}
+```
+
+4. Lặp lại yêu cầu đầu tiên. Nếu bạn đã làm ô nhiễm thành công nguyên mẫu, chuỗi UTF-7 bây giờ sẽ được giải mã trong phản hồi:
+
+```json
+{
+    "sessionId":"0123456789",
+    "username":"wiener",
+    "role":"foo"
+}
+```
+
+Do lỗi trong mô-đun `_http_incoming` của Node, tính năng này vẫn hoạt động ngay cả khi tiêu đề `Content-Type` thực tế của yêu cầu bao gồm thuộc tính `charset` của riêng nó. Để tránh ghi đè thuộc tính khi yêu cầu chứa tiêu đề trùng lặp, hàm `_addHeaderLine()` kiểm tra xem có thuộc tính nào tồn tại với cùng khóa hay không trước khi chuyển thuộc tính sang đối tượng `IncomingMessage`
+
+```js
+IncomingMessage.prototype._addHeaderLine = _addHeaderLine;
+function _addHeaderLine(field, value, dest) {
+    // ...
+    } else if (dest[field] === undefined) {
+        // Drop duplicates
+        dest[field] = value;
+    }
+}
+```
+ 
+ Nếu có, tiêu đề đang được xử lý sẽ bị loại bỏ. Do cách thực hiện này, kiểm tra này (có lẽ là vô tình) bao gồm các thuộc tính được thừa hưởng thông qua chuỗi nguyên mẫu. Điều này có nghĩa là nếu chúng ta làm ô nhiễm nguyên mẫu bằng thuộc tính `content-type` của riêng mình, thuộc tính biểu thị tiêu đề `Content-Type` thực từ yêu cầu sẽ bị loại bỏ tại thời điểm này, cùng với giá trị mong muốn bắt nguồn từ tiêu đề.
+
+---
+
+## Ví dụ: Detecting server-side prototype pollution without polluted property reflection
+
+https://portswigger.net/web-security/prototype-pollution/server-side/lab-detecting-server-side-prototype-pollution-without-polluted-property-reflection
+
+Sau khi đăng nhập và update thông tin:
+
+Request bình thường:
+
+![alt text](image-23.png)
+
+Tiêm prototype nhưng trong phản hồi không reflect:
+
+![alt text](image-24.png)
+
+Xóa 1 số dòng để request lỗi, thường nó sẽ trả về 500 kèm lỗi nhưng đây lỗi lại đã được đổi:
+
+![alt text](image-25.png)
+
+---
+
+## Scanning for server-side prototype pollution sources
+
+## Bypassing input filters for server-side prototype pollution
+
+Các trang web thường cố gắng ngăn chặn hoặc vá các lỗ hổng ô nhiễm nguyên mẫu bằng cách lọc các khóa đáng ngờ như `__proto__`. Phương pháp vệ sinh chính này không phải là giải pháp lâu dài mạnh mẽ vì có một số cách có thể bỏ qua. Ví dụ, kẻ tấn công có thể:
+- Làm tối nghĩa các từ khóa bị cấm để chúng không bị bỏ sót trong quá trình vệ sinh.
+- Truy cập nguyên mẫu thông qua thuộc tính constructor thay vì `__proto__`.
+
+Các ứng dụng Node cũng có thể xóa hoặc vô hiệu hóa `__proto__` hoàn toàn bằng cách sử dụng các cờ dòng lệnh `--disable-proto=delete` hoặc `--disable-proto=throw`. Tuy nhiên, điều này cũng có thể được bỏ qua bằng cách sử dụng kỹ thuật xây dựng.
+
+--- 
+
+## Ví dụ: Bypassing flawed input filters for server-side prototype pollution
+
+https://portswigger.net/web-security/prototype-pollution/server-side/lab-bypassing-flawed-input-filters-for-server-side-prototype-pollution
+
+Tương tự ta thử nhưng không thành công:
+
+![alt text](image-26.png)
+
+![alt text](image-27.png)
+
+Ta đổi thành constructor:
+
+```json
+"constructor": {
+    "prototype": {
+        "json spaces":10
+    }
+}
+```
+
+![alt text](image-28.png)
+
+![alt text](image-29.png)
+
+Từ đây ta đổi `isAdmin` thành `true`:
+
+![alt text](image-30.png)
+
+---
+
+## Remote code execution via server-side prototype pollution
+
+Trong khi ô nhiễm nguyên mẫu phía client thường khiến trang web dễ bị tấn công DOM XSS thì ô nhiễm nguyên mẫu phía máy chủ có khả năng dẫn đến thực thi mã từ xa (RCE). Trong phần này, bạn sẽ học cách xác định các trường hợp có thể thực hiện được điều này và cách khai thác một số vectơ tiềm năng trong các ứng dụng Node.
+
+### Identifying a vulnerable request
+
+Có một số bộ xử lý thực thi lệnh tiềm ẩn trong Node, nhiều trong số đó xảy ra trong mô-đun `child_process`. Những lệnh này thường được gọi bởi một yêu cầu xảy ra không đồng bộ với yêu cầu mà bạn có thể dùng để làm ô nhiễm nguyên mẫu ngay từ đầu. Do đó, cách tốt nhất để xác định các yêu cầu này là làm ô nhiễm nguyên mẫu bằng một tải trọng kích hoạt tương tác với Burp Collaborator khi được gọi.
+
+Biến môi trường `NODE_OPTIONS` cho phép bạn xác định chuỗi đối số dòng lệnh sẽ được sử dụng theo mặc định bất cứ khi nào bạn bắt đầu một tiến trình Node mới. Vì đây cũng là một thuộc tính trên đối tượng `env`, bạn có thể kiểm soát thuộc tính này thông qua ô nhiễm nguyên mẫu nếu nó chưa được xác định.
+
+Một số chức năng của Node để tạo tiến trình con mới chấp nhận thuộc tính shell tùy chọn, cho phép các nhà phát triển thiết lập một shell cụ thể, chẳng hạn như bash, để chạy lệnh. Bằng cách kết hợp điều này với thuộc tính NODE_OPTIONS độc hại, bạn có thể làm ô nhiễm nguyên mẫu theo cách gây ra tương tác với Burp Collaborator bất cứ khi nào một quy trình Node mới được tạo:
+
+```json
+"__proto__": {
+    "shell":"node",
+    "NODE_OPTIONS":"--inspect=YOUR-COLLABORATOR-ID.oastify.com\"\".oastify\"\".com"
+}
+```
+
+Theo cách này, bạn có thể dễ dàng xác định thời điểm yêu cầu tạo ra một tiến trình con mới với các đối số dòng lệnh có thể kiểm soát được thông qua ô nhiễm nguyên mẫu.
+
+Dấu ngoặc kép thoát trong tên máy chủ không thực sự cần thiết. Tuy nhiên, điều này có thể giúp giảm các kết quả dương tính giả bằng cách làm tối nghĩa tên máy chủ để tránh WAF và các hệ thống khác thu thập tên máy chủ.
+
+### Remote code execution via child_process.fork()
+
+Các phương thức như child_process.spawn() và child_process.fork() cho phép các nhà phát triển tạo các tiến trình con Node mới. Phương thức fork() chấp nhận một đối tượng tùy chọn trong đó một trong các tùy chọn tiềm năng là thuộc tính execArgv. Đây là một mảng các chuỗi chứa các đối số dòng lệnh cần được sử dụng khi tạo ra tiến trình con. Nếu các nhà phát triển không xác định, điều này cũng có nghĩa là nó có thể được kiểm soát thông qua ô nhiễm nguyên mẫu.
+
+Vì tiện ích này cho phép bạn trực tiếp kiểm soát các đối số dòng lệnh nên bạn có thể truy cập vào một số hướng tấn công mà không thể thực hiện được khi sử dụng NODE_OPTIONS. Đặc biệt quan tâm là đối số --eval, cho phép bạn truyền vào JavaScript tùy ý sẽ được thực thi bởi tiến trình con. Điều này có thể khá mạnh mẽ, thậm chí cho phép bạn tải các mô-đun bổ sung vào môi trường:
+
+```json
+"execArgv": [
+    "--eval=require('<module>')"
+]
+```
+
+Ngoài fork(), mô-đun child_process còn chứa phương thức execSync(), thực thi một chuỗi tùy ý như một lệnh hệ thống. Bằng cách kết nối các bộ lọc JavaScript và lệnh này, bạn có thể tăng cường khả năng gây ô nhiễm nguyên mẫu để có được khả năng RCE đầy đủ trên máy chủ.
 
 
 
