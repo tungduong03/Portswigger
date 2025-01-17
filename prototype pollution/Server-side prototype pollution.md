@@ -375,6 +375,11 @@ Trong ví dụ trước, chúng tôi đã tự chèn `child_process.execSync()` 
 Giống như `fork()`, phương thức `execSync()` cũng chấp nhận đối tượng tùy chọn, có thể bị ô nhiễm thông qua chuỗi nguyên mẫu. Mặc dù điều này không chấp nhận thuộc tính `execArgv`, bạn vẫn có thể đưa lệnh hệ thống vào một tiến trình con đang chạy bằng cách đồng thời làm ô nhiễm cả thuộc tính `shell` và `input`:
 - Tùy chọn đầu vào chỉ là một chuỗi được truyền vào luồng `stdin` của tiến trình con và được thực thi như một lệnh hệ thống bởi `execSync()`. Vì có những tùy chọn khác để cung cấp lệnh, chẳng hạn như chỉ cần truyền lệnh làm đối số cho hàm, nên thuộc tính đầu vào có thể được để không xác định.
 - Tùy chọn `shell` cho phép các nhà phát triển khai báo một `shell` cụ thể mà họ muốn lệnh chạy. Theo mặc định, `execSync()` sử dụng `shell` mặc định của hệ thống để chạy lệnh, vì vậy điều này cũng có thể được để không xác định.
+
+Bằng cách làm ô nhiễm cả hai thuộc tính này, bạn có thể ghi đè lệnh mà các nhà phát triển ứng dụng dự định thực hiện và thay vào đó chạy lệnh độc hại trong shell mà bạn chọn. Lưu ý rằng có một vài cảnh báo đối với điều này:
+
+- Tùy chọn `shell` chỉ chấp nhận tên của tệp thực thi shell và không cho phép bạn đặt bất kỳ đối số dòng lệnh bổ sung nào.
+- Shell luôn được thực thi với tham số `-c`, mà hầu hết các `shell` sử dụng để cho phép bạn truyền lệnh dưới dạng chuỗi. Tuy nhiên, việc đặt cờ `-c` trong Node thay vào đó sẽ chạy kiểm tra cú pháp trên tập lệnh được cung cấp, điều này cũng ngăn không cho tập lệnh thực thi. Do đó, mặc dù có giải pháp khắc phục vấn đề này, nhưng nhìn chung vẫn rất khó để sử dụng chính Node làm lớp vỏ cho cuộc tấn công.
 - Vì thuộc tính đầu vào chứa dữ liệu của bạn được truyền qua `stdin` nên `shell` bạn chọn phải chấp nhận lệnh từ `stdin`.
 
 Mặc dù chúng không thực sự có mục đích là shell, nhưng trình soạn thảo văn bản Vim và ex đáp ứng đáng tin cậy tất cả các tiêu chí này. Nếu một trong hai trình soạn thảo này được cài đặt trên máy chủ, điều này sẽ tạo ra một vectơ tiềm năng cho RCE:
@@ -384,16 +389,41 @@ Mặc dù chúng không thực sự có mục đích là shell, nhưng trình so
 "input":":! <command>\n"
 ```
 
-NOTE: Vim có một lời nhắc tương tác và mong đợi người dùng nhấn Enter để chạy lệnh được cung cấp. Do đó, bạn cần mô phỏng điều này bằng cách thêm ký tự xuống dòng (\n) vào cuối payload của bạn, như được hiển thị trong ví dụ trên.
+NOTE: Vim có một lời nhắc tương tác và mong đợi người dùng nhấn Enter để chạy lệnh được cung cấp. Do đó, bạn cần mô phỏng điều này bằng cách thêm ký tự xuống dòng (`\n`) vào cuối payload của bạn, như được hiển thị trong ví dụ trên.
 
 
-Một hạn chế nữa của kỹ thuật này là một số công cụ mà bạn có thể muốn sử dụng để khai thác cũng không đọc dữ liệu từ stdin theo mặc định. Tuy nhiên, có một số cách đơn giản để giải quyết vấn đề này. Ví dụ, trong trường hợp curl, bạn có thể đọc stdin và gửi nội dung dưới dạng phần thân của yêu cầu POST bằng cách sử dụng đối số `-d @-`. Trong những trường hợp khác, bạn có thể sử dụng xargs để chuyển đổi stdin thành danh sách các đối số có thể truyền vào lệnh.
+Một hạn chế nữa của kỹ thuật này là một số công cụ mà bạn có thể muốn sử dụng để khai thác cũng không đọc dữ liệu từ `stdin` theo mặc định. Tuy nhiên, có một số cách đơn giản để giải quyết vấn đề này. Ví dụ, trong trường hợp `curl`, bạn có thể đọc `stdin` và gửi nội dung dưới dạng phần thân của yêu cầu POST bằng cách sử dụng đối số `-d @-`. 
+
+Trong những trường hợp khác, bạn có thể sử dụng `xargs` để chuyển đổi `stdin` thành danh sách các đối số có thể truyền vào lệnh.
 
 
+----
 
+### ví dụ: Exfiltrating sensitive data via server-side prototype pollution
 
+https://portswigger.net/web-security/prototype-pollution/server-side/lab-exfiltrating-sensitive-data-via-server-side-prototype-pollution
 
+Check sink:
 
+![alt text](image-34.png)
+
+Chạy curl mà reload lại page job để bắt request:
+
+![alt text](image-35.png)
+
+![alt text](image-36.png)
+
+Liệt kê file:
+
+![alt text](image-37.png)
+
+![alt text](image-38.png)
+
+Đọc secret:
+
+![alt text](image-39.png)
+
+![alt text](image-40.png)
 
 
 

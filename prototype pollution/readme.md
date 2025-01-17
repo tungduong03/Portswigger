@@ -120,3 +120,12 @@ https://vulnerable-website.com/?__proto__[transport_url]=data:,alert(1);//
 ```
 Lưu ý rằng phần `//` ở cuối ví dụ trên chỉ dùng để comment suffix `/example.js` đã được mã hóa sẵn.
 
+## HOW TO PREVENT
+
+Chúng tôi khuyên bạn nên vá mọi lỗ hổng ô nhiễm nguyên mẫu mà bạn xác định được trên trang web của mình, bất kể chúng có đi kèm với các tiện ích dễ khai thác hay không. Ngay cả khi bạn tự tin rằng mình không bỏ sót bất kỳ lỗi nào, cũng không có gì đảm bảo rằng các bản cập nhật trong tương lai cho mã của bạn hoặc bất kỳ thư viện nào bạn sử dụng sẽ không giới thiệu các tiện ích mới, mở đường cho các cuộc khai thác khả thi.
+
+Trong phần này, chúng tôi sẽ cung cấp một số lời khuyên cấp cao về một số biện pháp bạn có thể thực hiện để bảo vệ trang web của mình khỏi các mối đe dọa mà chúng tôi đã đề cập trong phòng thí nghiệm của mình. Chúng tôi cũng sẽ đề cập đến một số cạm bẫy phổ biến cần tránh.
+
+### Sanitizing property keys
+
+Một trong những cách rõ ràng nhất để ngăn chặn lỗ hổng ô nhiễm nguyên mẫu là khử trùng khóa thuộc tính trước khi hợp nhất chúng vào các đối tượng hiện có.
