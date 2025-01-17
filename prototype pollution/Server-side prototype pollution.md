@@ -321,7 +321,7 @@ Có một số bộ xử lý thực thi lệnh tiềm ẩn trong Node, nhiều t
 
 Biến môi trường `NODE_OPTIONS` cho phép bạn xác định chuỗi đối số dòng lệnh sẽ được sử dụng theo mặc định bất cứ khi nào bạn bắt đầu một tiến trình Node mới. Vì đây cũng là một thuộc tính trên đối tượng `env`, bạn có thể kiểm soát thuộc tính này thông qua ô nhiễm nguyên mẫu nếu nó chưa được xác định.
 
-Một số chức năng của Node để tạo tiến trình con mới chấp nhận thuộc tính shell tùy chọn, cho phép các nhà phát triển thiết lập một shell cụ thể, chẳng hạn như bash, để chạy lệnh. Bằng cách kết hợp điều này với thuộc tính NODE_OPTIONS độc hại, bạn có thể làm ô nhiễm nguyên mẫu theo cách gây ra tương tác với Burp Collaborator bất cứ khi nào một quy trình Node mới được tạo:
+Một số chức năng của Node để tạo tiến trình con mới chấp nhận thuộc tính `shell` tùy chọn, cho phép các nhà phát triển thiết lập một shell cụ thể, chẳng hạn như bash, để chạy lệnh. Bằng cách kết hợp điều này với thuộc tính `NODE_OPTIONS` độc hại, bạn có thể làm ô nhiễm nguyên mẫu theo cách gây ra tương tác với Burp Collaborator bất cứ khi nào một quy trình Node mới được tạo:
 
 ```json
 "__proto__": {
@@ -336,9 +336,9 @@ Dấu ngoặc kép thoát trong tên máy chủ không thực sự cần thiết
 
 ### Remote code execution via child_process.fork()
 
-Các phương thức như child_process.spawn() và child_process.fork() cho phép các nhà phát triển tạo các tiến trình con Node mới. Phương thức fork() chấp nhận một đối tượng tùy chọn trong đó một trong các tùy chọn tiềm năng là thuộc tính execArgv. Đây là một mảng các chuỗi chứa các đối số dòng lệnh cần được sử dụng khi tạo ra tiến trình con. Nếu các nhà phát triển không xác định, điều này cũng có nghĩa là nó có thể được kiểm soát thông qua ô nhiễm nguyên mẫu.
+Các phương thức như `child_process.spawn()` và `child_process.fork()` cho phép các nhà phát triển tạo các tiến trình con Node mới. Phương thức `fork()` chấp nhận một đối tượng tùy chọn trong đó một trong các tùy chọn tiềm năng là thuộc tính `execArgv`. Đây là một mảng các chuỗi chứa các đối số dòng lệnh cần được sử dụng khi tạo ra tiến trình con. Nếu các nhà phát triển không xác định, điều này cũng có nghĩa là nó có thể được kiểm soát thông qua ô nhiễm nguyên mẫu.
 
-Vì tiện ích này cho phép bạn trực tiếp kiểm soát các đối số dòng lệnh nên bạn có thể truy cập vào một số hướng tấn công mà không thể thực hiện được khi sử dụng NODE_OPTIONS. Đặc biệt quan tâm là đối số --eval, cho phép bạn truyền vào JavaScript tùy ý sẽ được thực thi bởi tiến trình con. Điều này có thể khá mạnh mẽ, thậm chí cho phép bạn tải các mô-đun bổ sung vào môi trường:
+Vì tiện ích này cho phép bạn trực tiếp kiểm soát các đối số dòng lệnh nên bạn có thể truy cập vào một số hướng tấn công mà không thể thực hiện được khi sử dụng `NODE_OPTIONS`. Đặc biệt quan tâm là đối số `--eval`, cho phép bạn truyền vào JavaScript tùy ý sẽ được thực thi bởi tiến trình con. Điều này có thể khá mạnh mẽ, thậm chí cho phép bạn tải các mô-đun bổ sung vào môi trường:
 
 ```json
 "execArgv": [
@@ -346,11 +346,48 @@ Vì tiện ích này cho phép bạn trực tiếp kiểm soát các đối số
 ]
 ```
 
-Ngoài fork(), mô-đun child_process còn chứa phương thức execSync(), thực thi một chuỗi tùy ý như một lệnh hệ thống. Bằng cách kết nối các bộ lọc JavaScript và lệnh này, bạn có thể tăng cường khả năng gây ô nhiễm nguyên mẫu để có được khả năng RCE đầy đủ trên máy chủ.
+Ngoài `fork()`, mô-đun `child_process` còn chứa phương thức `execSync()`, thực thi một chuỗi tùy ý như một lệnh hệ thống. Bằng cách kết nối các bộ lọc JavaScript và lệnh này, bạn có thể tăng cường khả năng gây ô nhiễm nguyên mẫu để có được khả năng RCE đầy đủ trên máy chủ.
+
+---
+
+### Ví dụ: Remote code execution via server-side prototype pollution
+
+https://portswigger.net/web-security/prototype-pollution/server-side/lab-remote-code-execution-via-server-side-prototype-pollution
+
+Đầu tiên ta sẽ tìm sink, tương tự bài trước ta thử được:
+
+![alt text](image-31.png)
+
+Bây giờ ta test khả năng inject thành công thực thi lệnh bằng cách gửi gói tin ra ngoài và bắt thành công: (phải reload lại trang job)
+
+![alt text](image-32.png)
+
+Cuối cùng là rm report đã nhận được:
+
+![alt text](image-33.png)
+
+---
+
+### Remote code execution via child_process.execSync()
+
+Trong ví dụ trước, chúng tôi đã tự chèn `child_process.execSync()` sink thông qua đối số dòng lệnh `--eval`. Trong một số trường hợp, ứng dụng có thể tự gọi phương thức này để thực thi các lệnh hệ thống.
+
+Giống như `fork()`, phương thức `execSync()` cũng chấp nhận đối tượng tùy chọn, có thể bị ô nhiễm thông qua chuỗi nguyên mẫu. Mặc dù điều này không chấp nhận thuộc tính `execArgv`, bạn vẫn có thể đưa lệnh hệ thống vào một tiến trình con đang chạy bằng cách đồng thời làm ô nhiễm cả thuộc tính `shell` và `input`:
+- Tùy chọn đầu vào chỉ là một chuỗi được truyền vào luồng `stdin` của tiến trình con và được thực thi như một lệnh hệ thống bởi `execSync()`. Vì có những tùy chọn khác để cung cấp lệnh, chẳng hạn như chỉ cần truyền lệnh làm đối số cho hàm, nên thuộc tính đầu vào có thể được để không xác định.
+- Tùy chọn `shell` cho phép các nhà phát triển khai báo một `shell` cụ thể mà họ muốn lệnh chạy. Theo mặc định, `execSync()` sử dụng `shell` mặc định của hệ thống để chạy lệnh, vì vậy điều này cũng có thể được để không xác định.
+- Vì thuộc tính đầu vào chứa dữ liệu của bạn được truyền qua `stdin` nên `shell` bạn chọn phải chấp nhận lệnh từ `stdin`.
+
+Mặc dù chúng không thực sự có mục đích là shell, nhưng trình soạn thảo văn bản Vim và ex đáp ứng đáng tin cậy tất cả các tiêu chí này. Nếu một trong hai trình soạn thảo này được cài đặt trên máy chủ, điều này sẽ tạo ra một vectơ tiềm năng cho RCE:
+
+```json
+"shell":"vim",
+"input":":! <command>\n"
+```
+
+NOTE: Vim có một lời nhắc tương tác và mong đợi người dùng nhấn Enter để chạy lệnh được cung cấp. Do đó, bạn cần mô phỏng điều này bằng cách thêm ký tự xuống dòng (\n) vào cuối payload của bạn, như được hiển thị trong ví dụ trên.
 
 
-
-
+Một hạn chế nữa của kỹ thuật này là một số công cụ mà bạn có thể muốn sử dụng để khai thác cũng không đọc dữ liệu từ stdin theo mặc định. Tuy nhiên, có một số cách đơn giản để giải quyết vấn đề này. Ví dụ, trong trường hợp curl, bạn có thể đọc stdin và gửi nội dung dưới dạng phần thân của yêu cầu POST bằng cách sử dụng đối số `-d @-`. Trong những trường hợp khác, bạn có thể sử dụng xargs để chuyển đổi stdin thành danh sách các đối số có thể truyền vào lệnh.
 
 
 
