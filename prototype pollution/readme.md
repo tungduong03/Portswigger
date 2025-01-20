@@ -122,10 +122,59 @@ Lưu ý rằng phần `//` ở cuối ví dụ trên chỉ dùng để comment s
 
 ## HOW TO PREVENT
 
-Chúng tôi khuyên bạn nên vá mọi lỗ hổng ô nhiễm nguyên mẫu mà bạn xác định được trên trang web của mình, bất kể chúng có đi kèm với các tiện ích dễ khai thác hay không. Ngay cả khi bạn tự tin rằng mình không bỏ sót bất kỳ lỗi nào, cũng không có gì đảm bảo rằng các bản cập nhật trong tương lai cho mã của bạn hoặc bất kỳ thư viện nào bạn sử dụng sẽ không giới thiệu các tiện ích mới, mở đường cho các cuộc khai thác khả thi.
-
-Trong phần này, chúng tôi sẽ cung cấp một số lời khuyên cấp cao về một số biện pháp bạn có thể thực hiện để bảo vệ trang web của mình khỏi các mối đe dọa mà chúng tôi đã đề cập trong phòng thí nghiệm của mình. Chúng tôi cũng sẽ đề cập đến một số cạm bẫy phổ biến cần tránh.
+Chúng tôi khuyên bạn nên vá mọi lỗ hổng ô nhiễm nguyên mẫu mà bạn xác định được trên trang web của mình, bất kể chúng có đi kèm với các gadget dễ khai thác hay không. Ngay cả khi bạn tự tin rằng mình không bỏ sót bất kỳ lỗi nào, cũng không có gì đảm bảo rằng các bản cập nhật trong tương lai cho mã của bạn hoặc bất kỳ thư viện nào bạn sử dụng sẽ không giới thiệu các tiện ích mới, mở đường cho các cuộc khai thác khả thi.
 
 ### Sanitizing property keys
 
-Một trong những cách rõ ràng nhất để ngăn chặn lỗ hổng ô nhiễm nguyên mẫu là khử trùng khóa thuộc tính trước khi hợp nhất chúng vào các đối tượng hiện có.
+Một trong những cách rõ ràng nhất để ngăn chặn lỗ hổng ô nhiễm nguyên mẫu là `khử trùng khóa thuộc tính` trước khi hợp nhất chúng vào các đối tượng hiện có. Bằng cách này, bạn có thể ngăn chặn kẻ tấn công chèn các khóa như `__proto__`, tham chiếu đến nguyên mẫu của đối tượng.
+
+Sử dụng whitelist các key được phép là cách hiệu quả nhất để thực hiện việc này. Tuy nhiên, vì điều này không khả thi trong nhiều trường hợp, nên người ta thường sử dụng blacklist thay thế, loại bỏ mọi chuỗi có khả năng gây nguy hiểm khỏi dữ liệu đầu vào của người dùng.
+
+Mặc dù đây là giải pháp khắc phục nhanh chóng để triển khai, việc đưa vào blacklist thực sự mạnh mẽ vốn rất khó khăn, như đã chứng minh bởi các trang web chặn thành công `__proto__` nhưng lại không tính đến việc kẻ tấn công làm hỏng `prototype` của đối tượng thông qua `constructor` của đối tượng đó. Tương tự như vậy, các triển khai yếu cũng có thể được bỏ qua bằng các kỹ thuật che giấu đơn giản. Vì lý do này, chúng tôi chỉ khuyến nghị đây là giải pháp tạm thời chứ không phải là giải pháp lâu dài.
+
+### Preventing changes to prototype objects
+
+Một cách tiếp cận mạnh mẽ hơn để ngăn ngừa lỗ hổng ô nhiễm nguyên mẫu là ngăn chặn hoàn toàn việc thay đổi các đối tượng nguyên mẫu.
+
+Gọi phương thức `Object.freeze()` trên một đối tượng sẽ đảm bảo rằng các thuộc tính và giá trị của đối tượng đó không thể bị sửa đổi nữa và không thể thêm bất kỳ thuộc tính mới nào. Vì bản thân prototype chỉ là các đối tượng nên bạn có thể sử dụng phương pháp này để chủ động loại bỏ mọi nguồn tiềm ẩn:
+`Object.freeze(Object.prototype);`
+
+Phương thức `Object.seal()` tương tự, nhưng vẫn cho phép thay đổi giá trị của các thuộc tính hiện có. Đây có thể là một giải pháp thỏa hiệp tốt nếu bạn không thể sử dụng `Object.freeze()` vì bất kỳ lý do gì.
+
+### Preventing an object from inheriting properties
+
+Trong khi bạn có thể sử dụng `Object.freeze()` để chặn các nguồn gây ô nhiễm nguyên mẫu tiềm ẩn, bạn cũng có thể thực hiện các biện pháp để loại bỏ các tiện ích. Theo cách này, ngay cả khi kẻ tấn công xác định được lỗ hổng ô nhiễm nguyên mẫu, thì khả năng khai thác được lỗ hổng này cũng rất thấp.
+
+Theo mặc định, tất cả các đối tượng đều kế thừa từ `Object.prototype` toàn cục trực tiếp hoặc gián tiếp thông qua chuỗi nguyên mẫu. Tuy nhiên, bạn cũng có thể thiết lập thủ công nguyên mẫu của đối tượng bằng cách tạo nó bằng phương thức `Object.create()`. Điều này không chỉ cho phép bạn gán bất kỳ đối tượng nào bạn thích làm nguyên mẫu của đối tượng mới mà còn có thể tạo đối tượng với nguyên mẫu `null`, đảm bảo rằng đối tượng sẽ không kế thừa bất kỳ thuộc tính nào. 
+
+```js
+let myObject = Object.create(null);
+Object.getPrototypeOf(myObject);    // null
+```
+
+### Using safer alternatives where possible
+
+Một biện pháp phòng thủ mạnh mẽ khác chống lại ô nhiễm nguyên mẫu là sử dụng các đối tượng cung cấp khả năng bảo vệ tích hợp. Ví dụ, khi định nghĩa một đối tượng tùy chọn, bạn có thể sử dụng `Map` thay thế. Mặc dù `map` vẫn có thể kế thừa các thuộc tính độc hại, nhưng chúng có phương thức `get()` tích hợp chỉ trả về các thuộc tính được xác định trực tiếp trên chính `map`:
+
+```js
+Object.prototype.evil = 'polluted';
+let options = new Map();
+options.set('transport_url', 'https://normal-website.com');
+
+options.evil;                    // 'polluted'
+options.get('evil');             // undefined
+options.get('transport_url');    // 'https://normal-website.com'
+```
+
+`Set` là một giải pháp thay thế khác nếu bạn chỉ lưu trữ giá trị thay vì cặp `key:value`. Giống như `map`, `sets` cung cấp các phương thức tích hợp chỉ trả về các thuộc tính được xác định trực tiếp trên chính đối tượng:
+
+```js
+Object.prototype.evil = 'polluted';
+let options = new Set();
+options.add('safe');
+
+options.evil;           // 'polluted';
+option.has('evil');     // false
+options.has('safe');    // true
+```
+
