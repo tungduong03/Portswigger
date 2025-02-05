@@ -134,7 +134,12 @@ Cuối cùng gửi 1 đoạn XSS và thấy rằng nó đã phản hồi:
 
 ## How to secure a WebSocket connection
 
+Để giảm thiểu rủi ro về lỗ hổng bảo mật phát sinh với WebSockets, hãy sử dụng các hướng dẫn sau
 
+- Sử dụng giao thức `wss://` (WebSockets qua TLS).
+- Mã hóa cứng URL của điểm cuối WebSockets và chắc chắn không kết hợp dữ liệu do người dùng kiểm soát vào URL này.
+- Bảo vệ thông điệp bắt tay WebSocket chống lại CSRF, để tránh lỗ hổng tấn công WebSocket chéo trang web.
+- Xử lý dữ liệu nhận được qua WebSocket như dữ liệu không đáng tin cậy theo cả hai hướng. Xử lý dữ liệu an toàn trên cả máy chủ và máy khách, nhằm ngăn chặn các lỗ hổng dựa trên dữ liệu đầu vào như `SQL injection` và `cross-site scripting`.
 
 
 
