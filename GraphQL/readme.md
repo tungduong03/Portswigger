@@ -513,7 +513,7 @@ query=%0A++++mutation+changeEmail%28%24input%3A+ChangeEmailInput%21%29+%7B%0A+++
 
 Thử đổi lại email 1 lần nữa và nhận thấy vẫn thành công
 
-Tạo mã PoC CSRF và bỏ vào exploit server
+Tạo mã PoC CSRF và bỏ vào exploit server (Lưu ý khi delivery cho victim thì email trong PoC đó phải là email chưa sử dụng)
 
 ---
 
@@ -521,17 +521,37 @@ Tạo mã PoC CSRF và bỏ vào exploit server
 
 Để ngăn chặn nhiều cuộc tấn công GraphQL phổ biến, hãy thực hiện các bước sau khi triển khai API của bạn vào môi trường sản xuất:
 
-- Nếu API của bạn không dành cho công chúng sử dụng, hãy tắt tính năng tự kiểm tra trên API. Điều này khiến kẻ tấn công khó có thể lấy được thông tin về cách thức hoạt động của API và giảm nguy cơ tiết lộ thông tin không mong muốn.
+- Nếu API của bạn không public sử dụng, hãy tắt tính năng introspection trên API. Điều này khiến kẻ tấn công khó có thể lấy được thông tin về cách thức hoạt động của API và giảm nguy cơ tiết lộ thông tin không mong muốn.
 
-- Nếu API của bạn dành cho công chúng sử dụng thì có thể bạn sẽ cần phải bật tính năng introspection. Tuy nhiên, bạn nên xem lại lược đồ của API để đảm bảo rằng nó không tiết lộ các trường không mong muốn cho công chúng.
+- Nếu API của bạn public sử dụng thì có thể bạn sẽ cần phải bật tính năng introspection. Tuy nhiên, bạn nên xem lại lược đồ của API để đảm bảo rằng nó không tiết lộ các trường không mong muốn cho public.
 
-- Đảm bảo rằng các gợi ý đã bị vô hiệu hóa. Điều này ngăn chặn kẻ tấn công có thể sử dụng Clairvoyance hoặc các công cụ tương tự để thu thập thông tin về lược đồ cơ bản.
+- Đảm bảo rằng các suggestion đã bị vô hiệu hóa. Điều này ngăn chặn kẻ tấn công có thể sử dụng Clairvoyance hoặc các công cụ tương tự để thu thập thông tin về lược đồ cơ bản.
 
 - Đảm bảo rằng lược đồ API của bạn không hiển thị bất kỳ trường người dùng riêng tư nào, chẳng hạn như địa chỉ email hoặc ID người dùng.
 
+### Preventing GraphQL brute force attacks
 
+Đôi khi có thể bỏ qua rate-limit chuẩn khi sử dụng GraphQL API bằng aliases.
 
+Với những điều này, bạn có thể thực hiện các bước thiết kế để bảo vệ API của mình khỏi các cuộc tấn công bằng brute-force. Điều này thường liên quan đến việc hạn chế độ phức tạp của các truy vấn được API chấp nhận và giảm cơ hội cho kẻ tấn công thực hiện các cuộc tấn công từ chối dịch vụ (DoS).
 
+Để chống lại các cuộc brute-force:
+
+- Giới hạn độ sâu truy vấn của các truy vấn API của bạn. Thuật ngữ "độ sâu truy vấn" đề cập đến số lượng cấp độ lồng nhau trong một truy vấn. Các truy vấn lồng nhau nhiều có thể có tác động đáng kể đến hiệu suất và có khả năng tạo cơ hội cho các cuộc tấn công DoS nếu chúng được chấp nhận. Bằng cách giới hạn độ sâu truy vấn mà API của bạn chấp nhận, bạn có thể giảm khả năng điều này xảy ra.
+
+- Cấu hình giới hạn hoạt động. Giới hạn hoạt động cho phép bạn cấu hình số lượng tối đa các trường duy nhất, aliases và root field mà API của bạn có thể chấp nhận.
+
+- Cấu hình số lượng byte tối đa mà một truy vấn có thể chứa.
+
+- Hãy cân nhắc việc triển khai phân tích chi phí trên API của bạn. Phân tích chi phí là một quá trình mà ứng dụng thư viện xác định chi phí tài nguyên liên quan đến việc chạy truy vấn khi chúng được nhận. Nếu một truy vấn có độ phức tạp về mặt tính toán quá cao để chạy, API sẽ loại bỏ truy vấn đó.
+
+### Preventing CSRF over GraphQL
+
+Để bảo vệ chống lại các lỗ hổng CSRF của GraphQL, hãy đảm bảo những điều sau khi thiết kế API của bạn:
+
+- API của bạn chỉ chấp nhận truy vấn qua POST được mã hóa JSON.
+- API xác thực nội dung được cung cấp khớp với loại nội dung đã cung cấp.
+- API có cơ chế mã thông báo CSRF an toàn.
 
 
 

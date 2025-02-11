@@ -1,0 +1,36 @@
+# Web cache poisoning
+
+Trong phần này, chúng ta sẽ nói về web cache poisoning là gì và những hành vi nào có thể dẫn đến lỗ hổng web cache poisoning. Chúng ta cũng sẽ xem xét một số cách khai thác các lỗ hổng này và đề xuất các cách bạn có thể giảm thiểu khả năng tiếp xúc với chúng.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
