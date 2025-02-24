@@ -30,7 +30,9 @@ Mặt khác ta dùng `referer` để dò máy chủ, nếu máy chủ đúng th�
 ![alt text](image-13.png)
 
 ![alt text](image-12.png)
-Một cách khác để khai thác các lỗ hổng SSRF mù là khiến ứng dụng kết nối với hệ thống dưới sự kiểm soát của kẻ tấn công và trả về các phản hồi độc hại cho máy khách HTTP tạo kết nối. Nếu bạn có thể khai thác lỗ hổng nghiêm trọng phía máy khách trong quá trình triển khai HTTP của máy chủ, thì bạn có thể thực thi mã từ xa trong cơ sở hạ tầng ứng dụng.
+
+
+Một cách khác để khai thác các lỗ hổng blind SSRF là khiến ứng dụng kết nối với hệ thống dưới sự kiểm soát của kẻ tấn công và trả về các phản hồi độc hại cho máy khách HTTP tạo kết nối. Nếu bạn có thể khai thác lỗ hổng nghiêm trọng phía máy khách trong quá trình triển khai HTTP của máy chủ, thì bạn có thể thực thi mã từ xa trong cơ sở hạ tầng ứng dụng.
 
 
 
