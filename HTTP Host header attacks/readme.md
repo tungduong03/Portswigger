@@ -101,15 +101,6 @@ Khi sử dụng virtual hosting, tránh lưu trữ các website và ứng dụng
 
 Nếu không, kẻ tấn công có thể truy cập vào các domain nội bộ thông qua việc thao túng Host Header.
 
----
-
-## 1. Basic password reset poisoning
-https://portswigger.net/web-security/host-header/exploiting/password-reset-poisoning/lab-host-header-basic-password-reset-poisoning
-
-
----
-## 2. Host header authentication bypass
-https://portswigger.net/web-security/host-header/exploiting/lab-host-header-authentication-bypass
 
 
 
