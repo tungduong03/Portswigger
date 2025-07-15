@@ -10,12 +10,16 @@ Cách dễ nhất và hiệu quả nhất để sử dụng các kỹ thuật ng
 
 Thông thường khi kiểm tra các lỗ hổng SSRF sẽ quan sát thấy quá trình tra cứu DNS cho miền Collaborator được cung cấp nhưng không có yêu cầu HTTP tiếp theo. Điều này thường xảy ra do ứng dụng đã cố gắng thực hiện yêu cầu HTTP tới miền, khiến quá trình tra cứu DNS ban đầu xảy ra, nhưng yêu cầu HTTP thực tế đã bị chặn bởi tính năng lọc cấp mạng. Việc cơ sở hạ tầng cho phép lưu lượng DNS gửi đi là điều tương đối phổ biến, vì điều này cần thiết cho rất nhiều mục đích nhưng lại chặn các kết nối HTTP đến các đích không mong muốn.
 
+---
+
 Ví dụ: https://portswigger.net/web-security/ssrf/blind/lab-out-of-band-detection
 
 ![alt text](image-8.png)\
 ![alt text](image-9.png)
 
 Việc chỉ xác định một lỗ hổng SSRF mù có thể kích hoạt các yêu cầu HTTP ngoài băng tần tự nó không cung cấp lộ trình dẫn đến khả năng khai thác. Vì bạn không thể xem phản hồi từ yêu cầu phía sau nên không thể sử dụng hành vi này để khám phá nội dung trên các hệ thống mà máy chủ ứng dụng có thể tiếp cận. Tuy nhiên, nó vẫn có thể được tận dụng để thăm dò các lỗ hổng khác trên chính máy chủ hoặc trên các hệ thống phụ trợ khác. Bạn có thể quét một cách mù quáng không gian địa chỉ IP nội bộ, gửi các tải trọng được thiết kế để phát hiện các lỗ hổng phổ biến. Nếu các tải trọng đó cũng sử dụng các kỹ thuật ngoài băng tần mù, thì bạn có thể phát hiện ra lỗ hổng nghiêm trọng trên máy chủ nội bộ chưa được vá.
+
+---
 
 Ví dụ: https://portswigger.net/web-security/ssrf/blind/lab-shellshock-exploitation
 
@@ -34,5 +38,60 @@ Mặt khác ta dùng `referer` để dò máy chủ, nếu máy chủ đúng th�
 
 Một cách khác để khai thác các lỗ hổng blind SSRF là khiến ứng dụng kết nối với hệ thống dưới sự kiểm soát của kẻ tấn công và trả về các phản hồi độc hại cho máy khách HTTP tạo kết nối. Nếu bạn có thể khai thác lỗ hổng nghiêm trọng phía máy khách trong quá trình triển khai HTTP của máy chủ, thì bạn có thể thực thi mã từ xa trong cơ sở hạ tầng ứng dụng.
 
+---
 
+### Server-side template injection with a custom exploit
 
+Ví dụ: https://portswigger.net/web-security/server-side-template-injection/exploiting/lab-server-side-template-injection-with-a-custom-exploit
+
+Đăng nhập và ta thấy có thể thay đổi Name và Avatar:
+
+![alt text](image-14.png)
+
+![alt text](image-15.png)
+
+Ta thấy ta có thể kiểm soát được đối tượng `User` với thuộc tính `first_name`
+
+Tải lên 1 avatar sai định dạng:
+
+![alt text](image-16.png)
+
+![alt text](image-17.png)
+
+Ta thấy đối tượng `User` ở đây dùng function `setAvatar` đầu vào là path đến ảnh, và file xử lí là `/home/carlos/User.php`
+
+Vậy đây ta sẽ thực thi đổi Avatar thành đường dẫn ta có thể thao túng
+
+![alt text](image-18.png)
+
+Cần load lại trang comment để thực thi 
+
+![alt text](image-19.png)
+
+Xem lại ava thì nó đã được đổi
+
+![alt text](image-20.png)
+
+Tương tự ta xem file `User.php`
+
+![alt text](image-21.png)
+
+Load lại post và xem ava:
+
+![alt text](image-22.png)
+
+Ta thấy có 2 function: `setAvatar` sẽ set path cho `avatarLink` và func `gdprDelete` sẽ delete `avatarLink` từ đây ta sẽ gán:
+
+![alt text](image-23.png)
+
+Load lại post và xem ava:
+
+![alt text](image-24.png)
+
+Đổi file thành công, h ta thực hiện func xóa
+
+![alt text](image-25.png)
+
+Load lại post 
+
+![alt text](image-26.png)
