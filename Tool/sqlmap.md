@@ -86,6 +86,17 @@ S |	Stacked Queries |	Gửi nhiều truy vấn SQL trong một câu lệnh (thư
 Q |	Out-of-Band (OOB)
 
 
+- `--batch` để thực thi hết các lựa chọn 
+
+- `--risk` [1,2,3]
+
+- `--level` [1,2,3,4,5]
+
+- `--random-agent`
+
+
+
+
 
 
 
