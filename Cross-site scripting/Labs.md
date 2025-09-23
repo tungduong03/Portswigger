@@ -84,11 +84,16 @@ https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-angularj
 ### 12. Reflected XSS: 
 https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-dom-xss-reflected
 
-Đọc code ta thấy file `resources/js/searchResults.js` dùng eval để xử lí đầu vào search:\
-![alt text](image-7.png)\
-Với input `"abc"` hàm đã xử lý trả về JSON và dùng `\` để thoát dấu ngoặc kép `"`:\
-![alt text](image-8.png)\
-Nhưng lại không thoát dấu `\` nên ta có thể sử dụng payload: `\"-alert(1)}//`\
+Đọc code ta thấy file `resources/js/searchResults.js` dùng eval để xử lí đầu vào search:
+
+![alt text](image-7.png)
+
+Với input `"abc"` hàm đã xử lý trả về JSON và dùng `\` để thoát dấu ngoặc kép `"`:
+
+![alt text](image-8.png)
+
+Nhưng lại không thoát dấu `\` nên ta có thể sử dụng payload: `\"-alert(1)}//`
+
 ![alt text](image-9.png)
 
 Giair thích: với dấu `"` hệ thống sẽ chèn `\` vào trước, và vì đầu vào ta có 1 dấu `\` nên 2 dấu `\\` cạnh nhau không dùng để loại bỏ `"` nữa nên đã có thể đóng được đối tượng search, từ đó ta thêm hàm `alert()` và rồi comment `//` đoạn cuối.
@@ -98,8 +103,10 @@ Giair thích: với dấu `"` hệ thống sẽ chèn `\` vào trước, và vì
 ### 13. DOM XSS: 
 https://portswigger.net/web-security/cross-site-scripting/dom-based/lab-dom-xss-stored
 
-Ở phần hiển thị các comment ta thấy file: `/resources/js/loadCommentsWithVulnerableEscapeHtml.js`\
-![alt text](image-10.png)\
+Ở phần hiển thị các comment ta thấy file: `/resources/js/loadCommentsWithVulnerableEscapeHtml.js`
+
+![alt text](image-10.png)
+
 File này dùng hàm `replace` để xóa các kí tự `<` và `>` nhưng lỗ hổng của hàm này là chỉ replace các kí tự đầu tiên được tìm kiếm nên ta có payload: `<><img src=x onerror=alert(1)>`
 
 ---
@@ -173,6 +180,8 @@ Bài này escape cả `<>`, `'`, `"`, ta sẽ tấn công vào sự kiện `oncl
 ### 21. Reflected XSS: 
 https://portswigger.net/web-security/cross-site-scripting/contexts/lab-javascript-template-literal-angle-brackets-single-double-quotes-backslash-backticks-escaped
 
+Bài này xuất hiện dấu `` ` `` nên có thể nghĩ đến tamplate và SSTI
+
 Ở bài này inject vào template nên ngoài các cách XSS cũ ta có thể nghĩ đến SSTI payload, bài này thử với `${}` thành công, và payload: `${alert(1)}`
 
 ---
@@ -189,7 +198,7 @@ https://portswigger.net/web-security/cross-site-scripting/exploiting/lab-stealin
         });
     </script>
     ```
-    ![alt text](image-15.png)
+![alt text](image-15.png)
 
 ---
 

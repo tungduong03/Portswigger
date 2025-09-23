@@ -90,7 +90,7 @@ Context: Bài này `csrf` token sẽ trùng với `csrf` cookie
 
 Vẫn tương tự bài trước thì `Search` sẽ được thể hiện qua cookie
 
-Ta sẽ chỉ cần tạo 1 fake csrf token và csrf cookie giống nhau ở phía victim:
+Ta sẽ chỉ cần tạo 1 fake `csrf token` và `csrf cookie` giống nhau ở phía victim:
 
 Payload:
 
