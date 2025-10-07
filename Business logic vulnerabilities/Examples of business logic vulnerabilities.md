@@ -80,7 +80,9 @@ gqylxrazmopqjktwfhbcnwuzdoyxketjrlmnpqfyswjxkzdbvhrmoytaekxqfubolipqgjnwveuzxahb
 ![alt text](image-8.png)
 
 ## Đưa ra các giả định sai lầm về hành vi của người dùng
-Một trong những nguyên nhân cốt lõi phổ biến nhất gây ra lỗ hổng logic là đưa ra các giả định sai lầm về hành vi của người dùng. Điều này có thể dẫn đến một loạt vấn đề mà nhà phát triển chưa xem xét đến các tình huống nguy hiểm tiềm ẩn vi phạm các giả định này. Trong phần này, chúng tôi sẽ cung cấp một số ví dụ cảnh báo về các giả định phổ biến nên tránh và chứng minh chúng có thể dẫn đến những sai sót logic nguy hiểm như thế nào.
+
+Một trong những nguyên nhân cốt lõi phổ biến nhất gây ra lỗ hổng logic là đưa ra các giả định sai lầm về hành vi của người dùng. 
+
 ### Người dùng đáng tin cậy không phải lúc nào cũng đáng tin cậy
 Các ứng dụng có thể có vẻ an toàn vì chúng thực hiện các biện pháp có vẻ mạnh mẽ để thực thi các quy tắc kinh doanh. Thật không may, một số ứng dụng đã mắc sai lầm khi cho rằng, sau khi vượt qua các biện pháp kiểm soát nghiêm ngặt này ngay từ đầu, người dùng và dữ liệu của họ có thể được tin cậy vô thời hạn. Điều này có thể dẫn đến việc thực thi tương đối lỏng lẻo các biện pháp kiểm soát tương tự kể từ thời điểm đó trở đi.\
 Nếu các quy tắc kinh doanh và biện pháp bảo mật không được áp dụng nhất quán trong toàn bộ ứng dụng, điều này có thể dẫn đến những lỗ hổng nguy hiểm tiềm tàng có thể bị kẻ tấn công khai thác.

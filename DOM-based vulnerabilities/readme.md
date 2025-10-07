@@ -7,7 +7,7 @@ Context: Dùng hàm `addEventListener()` để lắng nghe message.
 
 ![alt text](image.png)
 
-Nó sẽ lắng nghe để gắng quảng cáo vào trang web. 
+Nó sẽ lắng nghe để gắn quảng cáo vào trang web. 
 
 Tạo 1 iframe ở server exploit, iframe này dẫn đến trang web cần exploit và có gửi thêm message, payload:
 

