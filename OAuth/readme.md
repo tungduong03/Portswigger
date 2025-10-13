@@ -92,7 +92,7 @@ Luồng: Khi đăng nhập bằng tài khoản thường, sau đó link với t�
 
 Đầu tiên đăng nhập bằng tài khoản thường, sau đó link với tài khoản mxh.
 
-Nhập các thông tin đăng nhập của mxh đó. 
+Nhập các thông tin đăng nhập của mxh đó. (đăng nhập thêm 1 lần)
 
 Ta thấy có URL:\
 ![alt text](image-2.png)
@@ -107,6 +107,8 @@ Từ đó chiếm quyền điều khiểm tk victim.
 
 Bắt gói tin và lấy `code` sau đó drop gói tin có `code` đó đi để code đó chưa được sử dụng, sau đó đưa vào exploit:\
 ![alt text](image-3.png)
+
+```<iframe src="https://YOUR-LAB-ID.web-security-academy.net/oauth-linking?code=STOLEN-CODE"></iframe>```
 
 Thành công thì khi đăng nhập bằng tài khoản mxh sẽ vào được admin:\
 ![alt text](image-4.png)

